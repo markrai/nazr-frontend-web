@@ -81,3 +81,7 @@ VITE_API_BASE_URL=http://localhost:9161
 
 - Thumbnails and previews are loaded directly from the backend with browser caching.
 - Stats are polled every 2s from `/stats` to reflect scan/queue progress.
+
+<img width="1873" height="836" alt="image" src="https://github.com/user-attachments/assets/5746cbd2-82f6-4fcb-a255-92d1be233b86" />
+<img width="1887" height="873" alt="image" src="https://github.com/user-attachments/assets/9c6aeb97-b622-4bdf-a4af-6ca241a5ce8f" />
+
