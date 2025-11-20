@@ -1,0 +1,24 @@
+services:
+  nazr:
+    image: markrai/nazr:latest
+    container_name: nazr
+    restart: unless-stopped
+    ports:
+      - "9161:9161"
+    volumes:
+      - ./data:/data
+      - /volume1/photos:/photos # Example Synology path
+    environment:
+      - RUST_LOG=info
+      # User ID and Group ID for file permissions (optional, depends on image support)
+      # - PUID=1026
+      # - PGID=100
+
+  nazrweb:
+    image: markrai/nazrweb:0.8.0
+    container_name: nazrweb
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - nazr

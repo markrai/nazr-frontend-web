@@ -1,0 +1,181 @@
+import { create } from 'zustand';
+
+type Theme = 'system' | 'light' | 'dark';
+export type DefaultScreen = 'dashboard' | 'gallery' | 'search' | 'albums' | 'people';
+export type FontFamily = 'system' | 'serif' | 'sans-serif' | 'monospace' | 'cursive' | 'fantasy';
+
+interface UIState {
+  gridSize: number; // min tile width
+  setGridSize: (px: number) => void;
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  showDeleteConfirmation: boolean;
+  setShowDeleteConfirmation: (show: boolean) => void;
+  defaultScreen: DefaultScreen;
+  setDefaultScreen: (screen: DefaultScreen) => void;
+  dashboardFontFamily: FontFamily;
+  setDashboardFontFamily: (font: FontFamily) => void;
+  playbackSpeed: number;
+  setPlaybackSpeed: (speed: number) => void;
+  prioritizeFolderStructure: boolean;
+  setPrioritizeFolderStructure: (value: boolean) => void;
+  prioritizeFilenameDate: boolean;
+  setPrioritizeFilenameDate: (value: boolean) => void;
+  deleteOriginalFiles: boolean;
+  setDeleteOriginalFiles: (value: boolean) => void;
+  smartMergeLevel: number; // 1-5, where 3 is default (middle)
+  setSmartMergeLevel: (level: number) => void;
+  isFetching: boolean;
+  setIsFetching: (value: boolean) => void;
+}
+
+const THEME_KEY = 'nazr.theme';
+const GRID_KEY = 'nazr.gridSize';
+const DELETE_CONFIRM_KEY = 'nazr.showDeleteConfirmation';
+const DEFAULT_SCREEN_KEY = 'nazr.defaultScreen';
+const DASHBOARD_FONT_KEY = 'nazr.dashboardFontFamily';
+const PLAYBACK_SPEED_KEY = 'nazr.playbackSpeed';
+const PRIORITIZE_FOLDER_STRUCTURE_KEY = 'nazr.prioritizeFolderStructure';
+const PRIORITIZE_FILENAME_DATE_KEY = 'nazr.prioritizeFilenameDate';
+const DELETE_ORIGINALS_KEY = 'nazr.deleteOriginalFiles';
+const SMART_MERGE_MODE_KEY = 'nazr.smartMergeMode';
+
+// Module-level variable to track system theme listener
+let systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;
+
+function getSystemTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme: Theme) {
+  if (typeof window === 'undefined') return;
+  
+  const root = document.documentElement;
+  
+  // Remove dark class first
+  root.classList.remove('dark');
+  
+  // Apply the theme
+  if (theme === 'system') {
+    // Apply system preference - only add 'dark' class if system prefers dark
+    const systemTheme = getSystemTheme();
+    if (systemTheme === 'dark') {
+      root.classList.add('dark');
+    }
+  } else if (theme === 'dark') {
+    root.classList.add('dark');
+  }
+  // else: theme === 'light' - dark class already removed above
+}
+
+export const useUIStore = create<UIState>((set, get) => {
+  // Initialize theme from localStorage
+  const initialTheme = (localStorage.getItem(THEME_KEY) as Theme) || 'system';
+  
+  // Apply theme immediately on store creation
+  if (typeof window !== 'undefined') {
+    applyTheme(initialTheme);
+    
+    // Set up system theme listener if needed
+    if (initialTheme === 'system') {
+      systemThemeListener = (e: MediaQueryListEvent) => {
+        const currentTheme = get().theme;
+        if (currentTheme === 'system') {
+          const root = document.documentElement;
+          if (e.matches) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        }
+      };
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeListener);
+    }
+  }
+  
+  return {
+    gridSize: Number(localStorage.getItem(GRID_KEY) || 200),
+    setGridSize: (px) => {
+      localStorage.setItem(GRID_KEY, String(px));
+      set({ gridSize: px });
+    },
+    theme: initialTheme,
+    setTheme: (t) => {
+      localStorage.setItem(THEME_KEY, t);
+      applyTheme(t);
+      set({ theme: t });
+      
+      // Update system theme listener
+      if (typeof window !== 'undefined') {
+        if (systemThemeListener) {
+          window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeListener);
+        }
+        
+        if (t === 'system') {
+          systemThemeListener = (e: MediaQueryListEvent) => {
+            const root = document.documentElement;
+            if (e.matches) {
+              root.classList.add('dark');
+            } else {
+              root.classList.remove('dark');
+            }
+          };
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeListener);
+        } else {
+          systemThemeListener = null;
+        }
+      }
+    },
+    showDeleteConfirmation: localStorage.getItem(DELETE_CONFIRM_KEY) !== 'false',
+    setShowDeleteConfirmation: (show) => {
+      localStorage.setItem(DELETE_CONFIRM_KEY, String(show));
+      set({ showDeleteConfirmation: show });
+    },
+    defaultScreen: (localStorage.getItem(DEFAULT_SCREEN_KEY) as DefaultScreen) || 'dashboard',
+    setDefaultScreen: (screen) => {
+      localStorage.setItem(DEFAULT_SCREEN_KEY, screen);
+      set({ defaultScreen: screen });
+    },
+    dashboardFontFamily: (localStorage.getItem(DASHBOARD_FONT_KEY) as FontFamily) || 'system',
+    setDashboardFontFamily: (font) => {
+      localStorage.setItem(DASHBOARD_FONT_KEY, font);
+      set({ dashboardFontFamily: font });
+    },
+    playbackSpeed: Number(localStorage.getItem(PLAYBACK_SPEED_KEY) || 1.0),
+    setPlaybackSpeed: (speed) => {
+      localStorage.setItem(PLAYBACK_SPEED_KEY, String(speed));
+      set({ playbackSpeed: speed });
+    },
+    prioritizeFolderStructure: localStorage.getItem(PRIORITIZE_FOLDER_STRUCTURE_KEY) !== null 
+      ? localStorage.getItem(PRIORITIZE_FOLDER_STRUCTURE_KEY) === 'true' 
+      : true,
+    setPrioritizeFolderStructure: (value) => {
+      localStorage.setItem(PRIORITIZE_FOLDER_STRUCTURE_KEY, String(value));
+      set({ prioritizeFolderStructure: value });
+    },
+    prioritizeFilenameDate: localStorage.getItem(PRIORITIZE_FILENAME_DATE_KEY) !== null 
+      ? localStorage.getItem(PRIORITIZE_FILENAME_DATE_KEY) === 'true' 
+      : true,
+    setPrioritizeFilenameDate: (value) => {
+      localStorage.setItem(PRIORITIZE_FILENAME_DATE_KEY, String(value));
+      set({ prioritizeFilenameDate: value });
+    },
+    deleteOriginalFiles: localStorage.getItem(DELETE_ORIGINALS_KEY) === 'true',
+    setDeleteOriginalFiles: (value) => {
+      localStorage.setItem(DELETE_ORIGINALS_KEY, String(value));
+      set({ deleteOriginalFiles: value });
+    },
+    smartMergeLevel: Number(localStorage.getItem(SMART_MERGE_MODE_KEY) || 4),
+    setSmartMergeLevel: (level) => {
+      const clampedLevel = Math.max(1, Math.min(5, level)); // Ensure 1-5 range
+      localStorage.setItem(SMART_MERGE_MODE_KEY, String(clampedLevel));
+      set({ smartMergeLevel: clampedLevel });
+    },
+    isFetching: false,
+    setIsFetching: (value) => {
+      set({ isFetching: value });
+    },
+  };
+});
+

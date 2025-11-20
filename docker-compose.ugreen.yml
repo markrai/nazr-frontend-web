@@ -1,0 +1,24 @@
+services:
+  nazr:
+    image: markrai/nazr:latest
+    container_name: nazr
+    restart: unless-stopped
+    ports:
+      - "9161:9161"
+    volumes:
+      - ./data:/data
+      - /mnt/dm-0/photos:/photos # Example Ugreen path
+    environment:
+      - RUST_LOG=info
+      # User ID and Group ID for file permissions
+      # - PUID=1000
+      # - PGID=1000
+
+  nazrweb:
+    image: markrai/nazrweb:0.8.0
+    container_name: nazrweb
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - nazr
