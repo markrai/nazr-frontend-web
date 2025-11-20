@@ -2,7 +2,7 @@
 
 # Nazr Web v0.8.0
 
-a React based front-end for Nazr — a comprehensive photo/video management app.
+a React based front-end for Nazr - a comprehensive photo/video management app. The "Web" designation is used to differentiate it from the desktop version, currently in development.
 
 ## Prerequisites
 
