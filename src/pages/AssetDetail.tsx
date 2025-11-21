@@ -335,16 +335,14 @@ export default function AssetDetail() {
   const navigationAssets = useMemo(() => {
     if (state?.filteredAssetIds && state.filteredAssetIds.length > 0) {
       const lookup = new Map(allAssets.map((asset) => [asset.id, asset]));
+      // Only include assets that are in the filtered list, preserving the order of filteredAssetIds
       const ordered = state.filteredAssetIds
         .map((id) => lookup.get(id))
         .filter((asset): asset is Asset => Boolean(asset));
-      if (ordered.length > 0) {
-        if (ordered.length === state.filteredAssetIds.length) {
-          return ordered;
-        }
-        const seen = new Set(ordered.map((asset) => asset.id));
-        return ordered.concat(allAssets.filter((asset) => !seen.has(asset.id)));
-      }
+      // Return assets in the order specified by filteredAssetIds
+      // If some assets aren't loaded yet, they won't be in the navigation list
+      // but the counter will still show the correct total (filteredAssetIds.length)
+      return ordered;
     }
     return allAssets;
   }, [state?.filteredAssetIds, allAssets]);
@@ -387,7 +385,44 @@ export default function AssetDetail() {
 
   // Define handleNavigate before it's used in useEffect
   const handleNavigate = useCallback((newIndex: number) => {
-    // Ensure we're navigating within valid bounds and skip deleted assets
+    // If we have filteredAssetIds, we can navigate to any index in that range
+    // even if the asset isn't in navigationAssets yet (it will be fetched)
+    if (state?.filteredAssetIds && newIndex >= 0 && newIndex < state.filteredAssetIds.length) {
+      const targetAssetId = state.filteredAssetIds[newIndex];
+      // Check if asset is in navigationAssets (loaded)
+      const assetInList = navigationAssets.find(a => a.id === targetAssetId);
+      if (assetInList && !deletedAssetIds.has(targetAssetId)) {
+        // Asset is loaded, navigate to it
+        setCurrentIndex(newIndex);
+        nav(`/asset/${targetAssetId}`, {
+          state: {
+            asset: assetInList,
+            index: newIndex,
+            sort,
+            order,
+            filteredAssetIds: state.filteredAssetIds,
+            from: fromLocation,
+          },
+          replace: true,
+        });
+      } else if (!deletedAssetIds.has(targetAssetId)) {
+        // Asset not loaded yet, navigate to it anyway (it will be fetched)
+        setCurrentIndex(newIndex);
+        nav(`/asset/${targetAssetId}`, {
+          state: {
+            index: newIndex,
+            sort,
+            order,
+            filteredAssetIds: state.filteredAssetIds,
+            from: fromLocation,
+          },
+          replace: true,
+        });
+      }
+      return;
+    }
+    
+    // Fallback to original logic when no filteredAssetIds
     if (newIndex >= 0 && newIndex < navigationAssets.length) {
       const newAsset = navigationAssets[newIndex];
       if (newAsset && !deletedAssetIds.has(newAsset.id)) {
@@ -398,7 +433,7 @@ export default function AssetDetail() {
             index: newIndex,
             sort,
             order,
-            filteredAssetIds: state?.filteredAssetIds, // Preserve filtered asset IDs for continued navigation
+            filteredAssetIds: state?.filteredAssetIds,
             from: fromLocation,
           },
           replace: true,
@@ -648,8 +683,12 @@ export default function AssetDetail() {
     );
   }
 
+  // Determine navigation capabilities
+  // If we have filteredAssetIds, use that for bounds checking (allows navigation even if not all assets are loaded)
+  // Otherwise, use navigationAssets.length
+  const totalForNavigation = state?.filteredAssetIds ? state.filteredAssetIds.length : navigationAssets.length;
   const canGoPrev = currentIndex > 0;
-  const canGoNext = currentIndex < navigationAssets.length - 1;
+  const canGoNext = currentIndex < totalForNavigation - 1;
 
   return (
     <>
@@ -677,9 +716,9 @@ export default function AssetDetail() {
           )}
 
           {/* Image counter */}
-          {navigationAssets.length > 1 && (
+          {(navigationAssets.length > 1 || (state?.filteredAssetIds && state.filteredAssetIds.length > 1)) && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm">
-              {currentIndex + 1} / {state?.filteredAssetIds ? navigationAssets.length : (totalAssets > 0 ? totalAssets : navigationAssets.length)}
+              {currentIndex + 1} / {state?.filteredAssetIds ? state.filteredAssetIds.length : (totalAssets > 0 ? totalAssets : navigationAssets.length)}
             </div>
           )}
 

@@ -991,6 +991,7 @@ export default function Gallery() {
                                             mobileColumns={mobileColumns}
                                             onAssetDeleted={handleAssetsRemoved}
                                             personId={personId}
+                                            filteredAssetIdsOverride={monthAssets.map(asset => asset.id)}
                                           />
                                         </div>
                                       ))}
@@ -1006,6 +1007,7 @@ export default function Gallery() {
                                       mobileColumns={mobileColumns}
                                       onAssetDeleted={handleAssetsRemoved}
                                       personId={personId}
+                                      filteredAssetIdsOverride={groupItems.map(asset => asset.id)}
                                     />
                                   )}
                               </div>
@@ -1082,6 +1084,7 @@ export default function Gallery() {
                                 mobileColumns={mobileColumns}
                                 onAssetDeleted={handleAssetsRemoved}
                                 personId={personId}
+                                filteredAssetIdsOverride={showAsFolder ? monthAssets.map(asset => asset.id) : undefined}
                               />
                             </div>
                           ))}
@@ -1097,6 +1100,7 @@ export default function Gallery() {
                           mobileColumns={mobileColumns}
                           onAssetDeleted={handleAssetsRemoved}
                           personId={personId}
+                          filteredAssetIdsOverride={showAsFolder ? groupItems.map(asset => asset.id) : undefined}
                         />
                       )
                     )}
