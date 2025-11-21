@@ -1,4 +1,5 @@
 import type { Asset } from '../types';
+import { assetApi } from './api';
 
 export interface Album {
   id: string;
@@ -9,116 +10,150 @@ export interface Album {
   updatedAt: number;
 }
 
-const ALBUMS_KEY = 'nazr.albums';
-const COLLECTIONS_KEY_OLD = 'nazr.collections'; // Legacy key for migration
+// Helper to convert backend album (numeric ID) to frontend album (string ID)
+function backendToFrontendAlbum(backend: {
+  id: number;
+  name: string;
+  description?: string;
+  asset_ids: number[];
+  created_at: number;
+  updated_at: number;
+}): Album {
+  return {
+    id: String(backend.id),
+    name: backend.name,
+    description: backend.description,
+    assetIds: backend.asset_ids,
+    createdAt: backend.created_at * 1000, // Convert seconds to milliseconds
+    updatedAt: backend.updated_at * 1000,
+  };
+}
 
-export function getAlbums(): Album[] {
+export async function getAlbums(): Promise<Album[]> {
   try {
-    // Check for new albums key first
-    const stored = localStorage.getItem(ALBUMS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    
-    // Migrate from old collections key if it exists
-    const oldStored = localStorage.getItem(COLLECTIONS_KEY_OLD);
-    if (oldStored) {
-      try {
-        const collections = JSON.parse(oldStored);
-        // Convert old collections to albums format (they're compatible)
-        saveAlbums(collections);
-        // Remove old key after migration
-        localStorage.removeItem(COLLECTIONS_KEY_OLD);
-        return collections;
-      } catch {
-        // If migration fails, return empty array
-        return [];
-      }
-    }
-    
-    return [];
-  } catch {
+    const backendAlbums = await assetApi.listAlbums();
+    return backendAlbums.map(backendToFrontendAlbum);
+  } catch (error) {
+    console.error('Failed to fetch albums:', error);
     return [];
   }
 }
 
-export function saveAlbums(albums: Album[]): void {
+export async function createAlbum(name: string, description?: string): Promise<Album> {
   try {
-    localStorage.setItem(ALBUMS_KEY, JSON.stringify(albums));
-  } catch (e) {
-    console.error('Failed to save albums:', e);
+    const backendAlbum = await assetApi.createAlbum(name, description);
+    return backendToFrontendAlbum(backendAlbum);
+  } catch (error) {
+    console.error('Failed to create album:', error);
+    throw error;
   }
 }
 
-export function createAlbum(name: string, description?: string): Album {
-  const albums = getAlbums();
-  const newAlbum: Album = {
-    id: `alb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name,
-    description,
-    assetIds: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  albums.push(newAlbum);
-  saveAlbums(albums);
-  return newAlbum;
+export async function updateAlbum(id: string, updates: Partial<Pick<Album, 'name' | 'description'>>): Promise<Album | null> {
+  try {
+    const albumId = parseInt(id, 10);
+    if (isNaN(albumId)) {
+      console.error('Invalid album ID:', id);
+      return null;
+    }
+    const backendAlbum = await assetApi.updateAlbum(albumId, updates.name, updates.description);
+    return backendToFrontendAlbum(backendAlbum);
+  } catch (error) {
+    console.error('Failed to update album:', error);
+    // Check if it's a 404 (album not found)
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export function updateAlbum(id: string, updates: Partial<Pick<Album, 'name' | 'description'>>): Album | null {
-  const albums = getAlbums();
-  const index = albums.findIndex((a) => a.id === id);
-  if (index === -1) return null;
-
-  albums[index] = {
-    ...albums[index],
-    ...updates,
-    updatedAt: Date.now(),
-  };
-  saveAlbums(albums);
-  return albums[index];
+export async function deleteAlbum(id: string): Promise<boolean> {
+  try {
+    const albumId = parseInt(id, 10);
+    if (isNaN(albumId)) {
+      console.error('Invalid album ID:', id);
+      return false;
+    }
+    await assetApi.deleteAlbum(albumId);
+    return true;
+  } catch (error) {
+    console.error('Failed to delete album:', error);
+    // Check if it's a 404 (album not found)
+    if (error instanceof Error && error.message.includes('404')) {
+      return false;
+    }
+    throw error;
+  }
 }
 
-export function deleteAlbum(id: string): boolean {
-  const albums = getAlbums();
-  const filtered = albums.filter((a) => a.id !== id);
-  if (filtered.length === albums.length) return false;
-  saveAlbums(filtered);
-  return true;
+export async function addAssetsToAlbum(albumId: string, assetIds: number[]): Promise<Album | null> {
+  try {
+    const id = parseInt(albumId, 10);
+    if (isNaN(id)) {
+      console.error('Invalid album ID:', albumId);
+      return null;
+    }
+    const backendAlbum = await assetApi.addAssetsToAlbum(id, assetIds);
+    return backendToFrontendAlbum(backendAlbum);
+  } catch (error) {
+    console.error('Failed to add assets to album:', error);
+    // Check if it's a 404 (album not found)
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export function addAssetsToAlbum(albumId: string, assetIds: number[]): Album | null {
-  const albums = getAlbums();
-  const index = albums.findIndex((a) => a.id === albumId);
-  if (index === -1) return null;
-
-  const existingIds = new Set(albums[index].assetIds);
-  assetIds.forEach((id) => existingIds.add(id));
-  albums[index].assetIds = Array.from(existingIds);
-  albums[index].updatedAt = Date.now();
-  saveAlbums(albums);
-  return albums[index];
+export async function removeAssetsFromAlbum(albumId: string, assetIds: number[]): Promise<Album | null> {
+  try {
+    const id = parseInt(albumId, 10);
+    if (isNaN(id)) {
+      console.error('Invalid album ID:', albumId);
+      return null;
+    }
+    const backendAlbum = await assetApi.removeAssetsFromAlbum(id, assetIds);
+    return backendToFrontendAlbum(backendAlbum);
+  } catch (error) {
+    console.error('Failed to remove assets from album:', error);
+    // Check if it's a 404 (album not found)
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export function removeAssetsFromAlbum(albumId: string, assetIds: number[]): Album | null {
-  const albums = getAlbums();
-  const index = albums.findIndex((a) => a.id === albumId);
-  if (index === -1) return null;
-
-  const idSet = new Set(assetIds);
-  albums[index].assetIds = albums[index].assetIds.filter((id) => !idSet.has(id));
-  albums[index].updatedAt = Date.now();
-  saveAlbums(albums);
-  return albums[index];
+export async function getAlbum(id: string): Promise<Album | null> {
+  try {
+    const albumId = parseInt(id, 10);
+    if (isNaN(albumId)) {
+      console.error('Invalid album ID:', id);
+      return null;
+    }
+    const backendAlbum = await assetApi.getAlbum(albumId);
+    return backendToFrontendAlbum(backendAlbum);
+  } catch (error) {
+    console.error('Failed to get album:', error);
+    // Check if it's a 404 (album not found)
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export function getAlbum(id: string): Album | null {
-  const albums = getAlbums();
-  return albums.find((a) => a.id === id) || null;
-}
-
-export function getAlbumsForAsset(assetId: number): Album[] {
-  const albums = getAlbums();
-  return albums.filter((a) => a.assetIds.includes(assetId));
+export async function getAlbumsForAsset(assetId: number): Promise<Album[]> {
+  try {
+    const albumIds = await assetApi.getAlbumsForAsset(assetId);
+    // Fetch all albums and filter
+    const allAlbums = await getAlbums();
+    const albumIdSet = new Set(albumIds.map(String));
+    return allAlbums.filter((a) => albumIdSet.has(a.id));
+  } catch (error) {
+    console.error('Failed to get albums for asset:', error);
+    return [];
+  }
 }
 

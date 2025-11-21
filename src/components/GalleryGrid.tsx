@@ -509,8 +509,13 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
     setSelectionMode(false);
   };
 
-  const handleAddToAlbum = (albumId: string, assetIds: number[]) => {
-    addAssetsToAlbum(albumId, assetIds);
+  const handleAddToAlbum = async (albumId: string, assetIds: number[]) => {
+    try {
+      await addAssetsToAlbum(albumId, assetIds);
+    } catch (error) {
+      console.error('Failed to add assets to album:', error);
+      alert('Failed to add assets to album. Please try again.');
+    }
   };
 
   const handleDelete = (id: number) => {

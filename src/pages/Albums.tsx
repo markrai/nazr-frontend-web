@@ -13,35 +13,30 @@ import GalleryGrid from '../components/GalleryGrid';
 import { useAdaptivePageSize } from '../lib/adaptiveLoading';
 
 export default function AlbumsPage() {
-  const [albums, setAlbums] = useState<Album[]>(getAlbums());
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const { pageSize: adaptivePageSize } = useAdaptivePageSize();
 
-  // Refresh albums when localStorage changes (from other tabs/components)
+  // Load albums on mount
   useEffect(() => {
-    const refreshAlbums = () => {
-      setAlbums(getAlbums());
-      if (selectedAlbum) {
-        const updated = getAlbums().find((a) => a.id === selectedAlbum.id);
-        if (updated) setSelectedAlbum(updated);
+    const loadAlbums = async () => {
+      try {
+        setIsLoading(true);
+        const loadedAlbums = await getAlbums();
+        setAlbums(loadedAlbums);
+      } catch (error) {
+        console.error('Failed to load albums:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    const handleStorageChange = () => refreshAlbums();
-    const handleAlbumUpdate = () => refreshAlbums();
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('albumUpdated', handleAlbumUpdate);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('albumUpdated', handleAlbumUpdate);
-    };
-  }, [selectedAlbum]);
+    loadAlbums();
+  }, []);
 
   // Fetch all assets to display in albums
   const {
@@ -80,33 +75,52 @@ export default function AlbumsPage() {
     setEditDescription(album.description || '');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (isCreating) {
       if (editName.trim()) {
-        const newAlbum = createAlbum(editName.trim(), editDescription.trim() || undefined);
-        setAlbums(getAlbums());
-        setSelectedAlbum(newAlbum);
-        setIsCreating(false);
+        try {
+          const newAlbum = await createAlbum(editName.trim(), editDescription.trim() || undefined);
+          const loadedAlbums = await getAlbums();
+          setAlbums(loadedAlbums);
+          setSelectedAlbum(newAlbum);
+          setIsCreating(false);
+        } catch (error) {
+          console.error('Failed to create album:', error);
+          alert('Failed to create album. Please try again.');
+        }
       }
     } else if (isEditing && selectedAlbum) {
       if (editName.trim()) {
-        updateAlbum(selectedAlbum.id, {
-          name: editName.trim(),
-          description: editDescription.trim() || undefined,
-        });
-        setAlbums(getAlbums());
-        setIsEditing(false);
-        setSelectedAlbum(getAlbums().find((a) => a.id === selectedAlbum.id) || null);
+        try {
+          await updateAlbum(selectedAlbum.id, {
+            name: editName.trim(),
+            description: editDescription.trim() || undefined,
+          });
+          const loadedAlbums = await getAlbums();
+          setAlbums(loadedAlbums);
+          setIsEditing(false);
+          const updated = loadedAlbums.find((a) => a.id === selectedAlbum.id);
+          setSelectedAlbum(updated || null);
+        } catch (error) {
+          console.error('Failed to update album:', error);
+          alert('Failed to update album. Please try again.');
+        }
       }
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this album?')) {
-      deleteAlbum(id);
-      setAlbums(getAlbums());
-      if (selectedAlbum?.id === id) {
-        setSelectedAlbum(null);
+      try {
+        await deleteAlbum(id);
+        const loadedAlbums = await getAlbums();
+        setAlbums(loadedAlbums);
+        if (selectedAlbum?.id === id) {
+          setSelectedAlbum(null);
+        }
+      } catch (error) {
+        console.error('Failed to delete album:', error);
+        alert('Failed to delete album. Please try again.');
       }
     }
   };
@@ -217,11 +231,15 @@ export default function AlbumsPage() {
             ))}
           </div>
 
-          {albums.length === 0 && !isCreating && (
+          {isLoading ? (
+            <div className="text-center py-8 text-sm text-zinc-500">
+              Loading albums...
+            </div>
+          ) : albums.length === 0 && !isCreating ? (
             <div className="text-center py-8 text-sm text-zinc-500">
               No albums yet. Create one to get started.
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Album content */}

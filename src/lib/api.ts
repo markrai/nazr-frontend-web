@@ -424,4 +424,83 @@ export const assetApi = {
     }
     return data;
   },
+
+  // Albums
+  listAlbums: () => request<Array<{
+    id: number;
+    name: string;
+    description?: string;
+    asset_ids: number[];
+    created_at: number;
+    updated_at: number;
+  }>>('/albums'),
+
+  getAlbum: (id: number) => request<{
+    id: number;
+    name: string;
+    description?: string;
+    asset_ids: number[];
+    created_at: number;
+    updated_at: number;
+  }>(`/albums/${id}`),
+
+  createAlbum: (name: string, description?: string) =>
+    request<{
+      id: number;
+      name: string;
+      description?: string;
+      asset_ids: number[];
+      created_at: number;
+      updated_at: number;
+    }>('/albums', {
+      method: 'POST',
+      body: JSON.stringify({ name, description }),
+    }),
+
+  updateAlbum: (id: number, name?: string, description?: string) =>
+    request<{
+      id: number;
+      name: string;
+      description?: string;
+      asset_ids: number[];
+      created_at: number;
+      updated_at: number;
+    }>(`/albums/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, description }),
+    }),
+
+  deleteAlbum: (id: number) =>
+    request<{ success: boolean }>(`/albums/${id}`, {
+      method: 'DELETE',
+    }),
+
+  addAssetsToAlbum: (id: number, assetIds: number[]) =>
+    request<{
+      id: number;
+      name: string;
+      description?: string;
+      asset_ids: number[];
+      created_at: number;
+      updated_at: number;
+    }>(`/albums/${id}/assets`, {
+      method: 'POST',
+      body: JSON.stringify({ asset_ids: assetIds }),
+    }),
+
+  removeAssetsFromAlbum: (id: number, assetIds: number[]) =>
+    request<{
+      id: number;
+      name: string;
+      description?: string;
+      asset_ids: number[];
+      created_at: number;
+      updated_at: number;
+    }>(`/albums/${id}/assets`, {
+      method: 'DELETE',
+      body: JSON.stringify({ asset_ids: assetIds }),
+    }),
+
+  getAlbumsForAsset: (assetId: number) =>
+    request<number[]>(`/albums/for-asset/${assetId}`),
 };
