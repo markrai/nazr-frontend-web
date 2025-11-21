@@ -70,6 +70,7 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
 
   const gridSize = useUIStore((s) => s.gridSize);
   const deleteOriginalFiles = useUIStore((s) => s.deleteOriginalFiles);
+  const showDeleteConfirmation = useUIStore((s) => s.showDeleteConfirmation);
 
   const GAP_PX = 8; // Tailwind gap-2
   const CARD_META_HEIGHT = 72; // padding + filename block + controls
@@ -695,7 +696,13 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
           selectedIds={selectedIds}
           onClearSelection={handleClearSelection}
           onAddToAlbum={handleAddToAlbum}
-          onDelete={() => setShowBulkDeleteConfirm(true)}
+          onDelete={() => {
+            if (showDeleteConfirmation) {
+              setShowBulkDeleteConfirm(true);
+            } else {
+              handleBulkDelete();
+            }
+          }}
         />
       )}
 
