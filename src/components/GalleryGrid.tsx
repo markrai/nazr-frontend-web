@@ -638,7 +638,9 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
             }}
           >
             {virtualizedAssets.map((a, i) => {
-              const actualIndex = shouldVirtualize ? virtualRange.start + i : i;
+              // Calculate index based on position in uniqueAssetIds (the full filtered list)
+              // This ensures correct index even when filteredAssetIdsOverride is used
+              const actualIndex = uniqueAssetIds.indexOf(a.id);
               return (
                 <div
                   key={a.id}
