@@ -82,22 +82,26 @@ export function useAssetsInfinite(params: {
   enabled?: boolean;
 }) {
   const isVisible = usePageVisibility();
-  const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
-  const enabled = (params.enabled ?? true) && isVisible;
+  const { enabled: enabledInput, ...queryParams } = params;
+  const pageSize = queryParams.pageSize ?? DEFAULT_PAGE_SIZE;
+  const enabled = (enabledInput ?? true) && isVisible;
   return useInfiniteQuery<Paginated<Asset>>({
-    queryKey: ['assets', params],
+    // Exclude the `enabled` flag from the cache key so different
+    // callers (Gallery vs. AssetDetail) with the same logical
+    // parameters share the same data.
+    queryKey: ['assets', queryParams],
     initialPageParam: 0,
     enabled,
     staleTime: 5_000,
     gcTime: 30_000,
     refetchOnWindowFocus: false,
     queryFn: ({ pageParam }) =>
-      api.assets({ 
-        offset: pageParam as number, 
-        limit: pageSize, 
-        sort: params.sort, 
-        order: params.order,
-        person_id: params.person_id,
+      api.assets({
+        offset: pageParam as number,
+        limit: pageSize,
+        sort: queryParams.sort,
+        order: queryParams.order,
+        person_id: queryParams.person_id,
       }),
     getNextPageParam: (lastPage, allPages) => {
       const loaded = allPages.reduce((acc, p) => acc + p.items.length, 0);
@@ -144,17 +148,21 @@ export function useSearchInfinite(params: {
   enabled?: boolean;
 }) {
   const isVisible = usePageVisibility();
-  const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
-  const enabled = (params.enabled ?? true) && isVisible;
+  const { enabled: enabledInput, ...queryParams } = params;
+  const pageSize = queryParams.pageSize ?? DEFAULT_PAGE_SIZE;
+  const enabled = (enabledInput ?? true) && isVisible;
   return useInfiniteQuery<SearchResult>({
-    queryKey: ['search', params],
+    // Exclude `enabled` from the cache key so Search and
+    // AssetDetail share the same search result pages when
+    // their logical parameters match.
+    queryKey: ['search', queryParams],
     initialPageParam: 0,
-    enabled: enabled && !!params.q,
+    enabled: enabled && !!queryParams.q,
     staleTime: 5_000,
     gcTime: 30_000,
     refetchOnWindowFocus: false,
     queryFn: ({ pageParam }) =>
-      api.search({ ...params, offset: pageParam as number, limit: pageSize }),
+      api.search({ ...queryParams, offset: pageParam as number, limit: pageSize }),
     getNextPageParam: (lastPage, allPages) => {
       const loaded = allPages.reduce((acc, p) => acc + p.items.length, 0);
       return loaded < lastPage.total ? loaded : undefined;

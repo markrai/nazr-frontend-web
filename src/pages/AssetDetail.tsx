@@ -201,7 +201,6 @@ export default function AssetDetail() {
   const loc = useLocation();
   const state = loc.state as AssetDetailLocationState | null;
   const { pageSize: adaptivePageSize } = useAdaptivePageSize();
-  const detailPageSize = Math.max(60, Math.min(adaptivePageSize, 160));
   const asset = state?.asset;
   const fromLocation = state?.from;
   const isFromSearch = fromLocation?.pathname?.startsWith('/search') ?? false;
@@ -264,6 +263,7 @@ export default function AssetDetail() {
   const [isExtractingAudio, setIsExtractingAudio] = useState(false);
   const [videoState, setVideoState] = useState<{ currentTime: number; isPlaying: boolean } | null>(null);
   const [showBurstCapture, setShowBurstCapture] = useState(false);
+  const [pendingNavigationAfterDelete, setPendingNavigationAfterDelete] = useState<{ deletedId: number; originalIndex: number } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
   // Fetch assets for navigation. When opened from the Search page,
@@ -276,7 +276,9 @@ export default function AssetDetail() {
   const { data: assetsData, refetch: refetchAssets } = useAssetsInfinite({
     sort,
     order,
-    pageSize: detailPageSize,
+    // Use the same adaptive page size as Gallery so navigation
+    // in AssetDetail sees the exact same paginated asset set.
+    pageSize: adaptivePageSize,
     person_id: personIdFromSource,
     enabled: !isSearchContext,
   });
@@ -288,7 +290,9 @@ export default function AssetDetail() {
     camera_make: searchCameraMake,
     camera_model: searchCameraModel,
     platformType: searchPlatformType,
-    pageSize: detailPageSize,
+    // Match Search page page size so detail view reuses
+    // the same search result ordering and pages.
+    pageSize: adaptivePageSize,
     enabled: isSearchContext,
   });
 
@@ -440,38 +444,18 @@ export default function AssetDetail() {
       // Mark asset as deleted
       setDeletedAssetIds(prev => new Set([...prev, idToDelete]));
       
+      // If we deleted the current asset, set pending navigation and trigger refetch
+      if (idToDelete === currentAsset?.id) {
+        // Set pending navigation to trigger navigation after refetch completes
+        // Store the original index so we can navigate to the correct next item
+        setPendingNavigationAfterDelete({ deletedId: idToDelete, originalIndex: currentIndex });
+      }
+      
       // Refetch assets/search to get updated list from server
       if (isSearchContext) {
         refetchSearch();
       } else {
         refetchAssets();
-      }
-      
-      // If we deleted the current asset, navigate to the next one or previous one
-      if (idToDelete === currentAsset?.id) {
-        const remainingAssets = navigationAssets.filter(a => a.id !== idToDelete);
-        if (remainingAssets.length === 0) {
-          // No more assets, go back to gallery
-          goBackToSource();
-        } else {
-          // Navigate to the next asset, or previous if we're at the end
-          const nextIndex = currentIndex < remainingAssets.length ? currentIndex : currentIndex - 1;
-          if (nextIndex >= 0 && nextIndex < remainingAssets.length) {
-            nav(`/asset/${remainingAssets[nextIndex].id}`, {
-              state: {
-                asset: remainingAssets[nextIndex],
-                index: nextIndex,
-                sort,
-                order,
-                filteredAssetIds: state?.filteredAssetIds, // Preserve filtered asset IDs
-                from: fromLocation,
-              },
-              replace: true,
-            });
-          } else {
-            goBackToSource();
-          }
-        }
       }
     } catch (error) {
       console.error('Delete failed:', error);
@@ -536,6 +520,47 @@ export default function AssetDetail() {
       }
     }
   }, [currentAsset, navigationAssets, currentIndex, nav, sort, order, deletedAssetIds, goBackToSource, state?.filteredAssetIds, fromLocation]);
+
+  // Handle navigation after deletion and refetch completes
+  useEffect(() => {
+    if (!pendingNavigationAfterDelete) return;
+    
+    const { deletedId, originalIndex } = pendingNavigationAfterDelete;
+    
+    // Wait for navigationAssets to update (should not contain deleted asset)
+    // Check that we have assets and the deleted asset is not in the list
+    if (navigationAssets.length > 0 && !navigationAssets.some(a => a.id === deletedId)) {
+      // Navigate to the asset that was next in sequence
+      // After deletion, the item that was at originalIndex + 1 is now at originalIndex
+      // If we were at the end, navigate to the last item
+      const nextIndex = originalIndex < navigationAssets.length ? originalIndex : Math.max(0, navigationAssets.length - 1);
+      
+      if (nextIndex >= 0 && nextIndex < navigationAssets.length) {
+        const nextAsset = navigationAssets[nextIndex];
+        // Make sure we're not navigating to the deleted asset (shouldn't happen, but safety check)
+        if (nextAsset && nextAsset.id !== deletedId) {
+          nav(`/asset/${nextAsset.id}`, {
+            state: {
+              asset: nextAsset,
+              index: nextIndex,
+              sort,
+              order,
+              filteredAssetIds: state?.filteredAssetIds,
+              from: fromLocation,
+            },
+            replace: true,
+          });
+          // Clear pending navigation
+          setPendingNavigationAfterDelete(null);
+          return;
+        }
+      }
+      
+      // If we can't navigate to next/prev, go back to gallery
+      goBackToSource();
+      setPendingNavigationAfterDelete(null);
+    }
+  }, [pendingNavigationAfterDelete, navigationAssets, nav, sort, order, fromLocation, goBackToSource, state?.filteredAssetIds]);
 
   // Handle keyboard navigation
   useEffect(() => {
