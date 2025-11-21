@@ -679,7 +679,7 @@ export default function AssetDetail() {
           {/* Image counter */}
           {navigationAssets.length > 1 && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm">
-              {currentIndex + 1} / {totalAssets > 0 ? totalAssets : navigationAssets.length}
+              {currentIndex + 1} / {state?.filteredAssetIds ? navigationAssets.length : (totalAssets > 0 ? totalAssets : navigationAssets.length)}
             </div>
           )}
 

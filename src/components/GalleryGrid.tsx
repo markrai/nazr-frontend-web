@@ -8,7 +8,7 @@ import { addAssetsToAlbum } from '../lib/albums';
 import { assetApi } from '../lib/api';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPrevious, hasPrevious, sort, order, isLoading, isFetchingNextPage, onAssetDeleted, mobileColumns, personId }: {
+export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPrevious, hasPrevious, sort, order, isLoading, isFetchingNextPage, onAssetDeleted, mobileColumns, personId, filteredAssetIdsOverride }: {
   assets: Asset[];
   onLoadMore?: () => void;
   hasMore?: boolean;
@@ -21,6 +21,7 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
   onAssetDeleted?: (id: number | number[]) => void;
   mobileColumns?: number;
   personId?: number | null;
+  filteredAssetIdsOverride?: number[];
 }) {
   // Deduplicate assets by ID to prevent duplicate React keys
   const uniqueAssets = useMemo(() => {
@@ -241,7 +242,12 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
     return () => cancelAnimationFrame(rafId);
   }, [shouldVirtualize, uniqueAssets.length, columnCount]);
 
-  const uniqueAssetIds = useMemo(() => uniqueAssets.map((asset) => asset.id), [uniqueAssets]);
+  const uniqueAssetIds = useMemo(() => {
+    if (filteredAssetIdsOverride) {
+      return filteredAssetIdsOverride;
+    }
+    return uniqueAssets.map((asset) => asset.id);
+  }, [uniqueAssets, filteredAssetIdsOverride]);
 
   const virtualizedAssets = useMemo(() => {
     if (!shouldVirtualize) return uniqueAssets;
