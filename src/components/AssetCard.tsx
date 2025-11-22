@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import type { Asset, Paginated } from '../types';
 import { media, assetApi, api } from '../lib/api';
@@ -11,6 +11,7 @@ import { saveGalleryScroll } from '../lib/scroll';
 import { useUIStore } from '../lib/store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
+import { addAssetsToAlbum, getAlbums, createAlbum, getAlbumsForAsset, removeAssetsFromAlbum, type Album } from '../lib/albums';
 
 interface AssetCardProps {
   asset: Asset;
@@ -26,9 +27,10 @@ interface AssetCardProps {
   isCtrlPressed?: boolean;
   personId?: number | null;
   selectedIds?: Set<number>; // Set of selected asset IDs for multi-select operations
+  isInAlbumsView?: boolean; // Whether this card is being displayed in the Albums view
 }
 
-export default function AssetCard({ asset, index, sort, order, filteredAssetIds, isSelected, onSelect, selectionMode, onDelete, isDragging, isCtrlPressed, personId, selectedIds }: AssetCardProps) {
+export default function AssetCard({ asset, index, sort, order, filteredAssetIds, isSelected, onSelect, selectionMode, onDelete, isDragging, isCtrlPressed, personId, selectedIds, isInAlbumsView }: AssetCardProps) {
   const location = useLocation();
   const url = media.thumbUrl(asset.id, asset.sha256);
   const preview = media.previewUrl(asset.id, asset.sha256);
@@ -37,9 +39,18 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
   const isUnsupported = !image && !video;
   const [imageError, setImageError] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [albumMenuPosition, setAlbumMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [selectedTargetPersonId, setSelectedTargetPersonId] = useState<number | null>(null);
+  const [showAlbumMenu, setShowAlbumMenu] = useState(false);
+  const [albumMenuMode, setAlbumMenuMode] = useState<'add' | 'remove'>('add');
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [assetAlbums, setAssetAlbums] = useState<Album[]>([]);
+  const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
+  const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
+  const [newAlbumName, setNewAlbumName] = useState('');
+  const [newAlbumDescription, setNewAlbumDescription] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -49,6 +60,46 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
     queryFn: () => api.listPersons(),
     enabled: showAssignDialog,
   });
+
+  // Load albums and check asset album membership when album menu is shown
+  useEffect(() => {
+    if (showAlbumMenu) {
+      const loadAlbums = async () => {
+        setIsLoadingAlbums(true);
+        try {
+          const [loadedAlbums, assetAlbumsData] = await Promise.all([
+            getAlbums(),
+            getAlbumsForAsset(asset.id)
+          ]);
+          setAlbums(loadedAlbums);
+          setAssetAlbums(assetAlbumsData);
+        } catch (error) {
+          console.error('Failed to load albums:', error);
+        } finally {
+          setIsLoadingAlbums(false);
+        }
+      };
+      loadAlbums();
+    }
+  }, [showAlbumMenu, asset.id]);
+
+  // Close album menu when clicking outside
+  useEffect(() => {
+    if (!showAlbumMenu) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Check if click is outside the album menu
+      if (!target.closest('[data-album-menu]')) {
+        setShowAlbumMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAlbumMenu]);
 
   // Merge persons mutation
   const mergeMutation = useMutation({
@@ -183,6 +234,124 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
   const handleAssignToPerson = () => {
     setContextMenu(null); // Close context menu
     setShowAssignDialog(true);
+  };
+
+  const handleAddToAlbum = () => {
+    if (contextMenu) {
+      setAlbumMenuPosition({ x: contextMenu.x, y: contextMenu.y });
+    }
+    setContextMenu(null); // Close context menu
+    setAlbumMenuMode('add');
+    setShowAlbumMenu(true);
+  };
+
+  const handleMoveToAlbum = () => {
+    if (contextMenu) {
+      setAlbumMenuPosition({ x: contextMenu.x, y: contextMenu.y });
+    }
+    setContextMenu(null); // Close context menu
+    setAlbumMenuMode('add');
+    setShowAlbumMenu(true);
+  };
+
+  const handleRemoveFromAlbum = async (albumId?: string) => {
+    setContextMenu(null);
+    
+    if (albumId) {
+      // Remove from specific album
+      try {
+        await removeAssetsFromAlbum(albumId, [asset.id]);
+        showNotification('Removed from album!');
+        // Refresh asset albums
+        const updatedAlbums = await getAlbumsForAsset(asset.id);
+        setAssetAlbums(updatedAlbums);
+        setShowAlbumMenu(false);
+      } catch (error) {
+        console.error('Failed to remove asset from album:', error);
+        alert('Failed to remove asset from album. Please try again.');
+      }
+    } else {
+      // Show album selection for removal
+      if (contextMenu) {
+        setAlbumMenuPosition({ x: contextMenu.x, y: contextMenu.y });
+      }
+      setAlbumMenuMode('remove');
+      setShowAlbumMenu(true);
+    }
+  };
+
+  const handleAddToAlbumSelect = async (albumId: string) => {
+    try {
+      // If asset is already in albums, remove from all current albums first (Move behavior)
+      if (assetAlbums.length > 0) {
+        for (const album of assetAlbums) {
+          await removeAssetsFromAlbum(album.id, [asset.id]);
+        }
+      }
+      // Add to new album
+      await addAssetsToAlbum(albumId, [asset.id]);
+      showNotification(assetAlbums.length > 0 ? 'Moved to album!' : 'Added to album!');
+      // Refresh asset albums
+      const updatedAlbums = await getAlbumsForAsset(asset.id);
+      setAssetAlbums(updatedAlbums);
+      setShowAlbumMenu(false);
+      setAlbumMenuMode('add');
+    } catch (error) {
+      console.error('Failed to add asset to album:', error);
+      alert('Failed to add asset to album. Please try again.');
+    }
+  };
+
+  const handleRemoveFromAlbumSelect = async (albumId: string) => {
+    try {
+      await removeAssetsFromAlbum(albumId, [asset.id]);
+      showNotification('Removed from album!');
+      // Refresh asset albums
+      const updatedAlbums = await getAlbumsForAsset(asset.id);
+      setAssetAlbums(updatedAlbums);
+      setShowAlbumMenu(false);
+      setAlbumMenuMode('add');
+    } catch (error) {
+      console.error('Failed to remove asset from album:', error);
+      alert('Failed to remove asset from album. Please try again.');
+    }
+  };
+
+  const handleCreateAlbum = async () => {
+    if (!newAlbumName.trim()) {
+      return;
+    }
+
+    try {
+      const newAlbum = await createAlbum(newAlbumName.trim(), newAlbumDescription.trim() || undefined);
+      
+      // If asset is already in albums, remove from all current albums first (Move behavior)
+      if (assetAlbums.length > 0) {
+        for (const album of assetAlbums) {
+          await removeAssetsFromAlbum(album.id, [asset.id]);
+        }
+      }
+      
+      await addAssetsToAlbum(newAlbum.id, [asset.id]);
+      
+      // Refresh albums list and asset albums
+      const [loadedAlbums, updatedAssetAlbums] = await Promise.all([
+        getAlbums(),
+        getAlbumsForAsset(asset.id)
+      ]);
+      setAlbums(loadedAlbums);
+      setAssetAlbums(updatedAssetAlbums);
+
+      // Reset form and close menu
+      setIsCreatingAlbum(false);
+      setNewAlbumName('');
+      setNewAlbumDescription('');
+      setShowAlbumMenu(false);
+      showNotification(assetAlbums.length > 0 ? 'Created album and moved photo!' : 'Created album and added photo!');
+    } catch (error) {
+      console.error('Failed to create album:', error);
+      alert('Failed to create album. Please try again.');
+    }
   };
   
   // Get count of selected assets for display
@@ -406,15 +575,146 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          onClose={() => setContextMenu(null)}
+          onClose={() => {
+            setContextMenu(null);
+            setShowAlbumMenu(false);
+            setAlbumMenuPosition(null);
+            setAlbumMenuMode('add');
+          }}
           onDownload={handleDownload}
           onDelete={handleDeleteClick}
           onCopy={handleCopy}
+          onAddToAlbum={(!isInAlbumsView && assetAlbums.length === 0) ? handleAddToAlbum : undefined}
+          onMoveToAlbum={(isInAlbumsView || assetAlbums.length > 0) ? handleMoveToAlbum : undefined}
+          onRemoveFromAlbum={assetAlbums.length > 0 ? () => handleRemoveFromAlbum() : undefined}
           onAssignToPerson={handleAssignToPerson}
           showAssignToPerson={!!personId}
           onUnassignFromPerson={personId ? handleUnassignFromPerson : undefined}
           showUnassignFromPerson={!!personId}
         />
+      )}
+      
+      {/* Album Menu Popup - similar to BulkActions */}
+      {showAlbumMenu && albumMenuPosition && (
+        <div 
+          data-album-menu
+          className="fixed z-[60] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg overflow-hidden" 
+          style={{ 
+            left: `${albumMenuPosition.x}px`, 
+            top: `${Math.max(10, albumMenuPosition.y - 250)}px`, 
+            width: '256px',
+            maxHeight: '400px'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {isCreatingAlbum ? (
+            <div className="p-3 space-y-2">
+              <input
+                type="text"
+                value={newAlbumName}
+                onChange={(e) => setNewAlbumName(e.target.value)}
+                placeholder="Album name"
+                className="w-full px-2 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCreateAlbum();
+                  } else if (e.key === 'Escape') {
+                    setIsCreatingAlbum(false);
+                    setNewAlbumName('');
+                    setNewAlbumDescription('');
+                    setShowAlbumMenu(false);
+                  }
+                }}
+              />
+              <textarea
+                value={newAlbumDescription}
+                onChange={(e) => setNewAlbumDescription(e.target.value)}
+                placeholder="Description (optional)"
+                rows={2}
+                className="w-full px-2 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-sm resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsCreatingAlbum(false);
+                    setNewAlbumName('');
+                    setNewAlbumDescription('');
+                    setShowAlbumMenu(false);
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreateAlbum}
+                  className="flex-1 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setIsCreatingAlbum(false);
+                    setNewAlbumName('');
+                    setNewAlbumDescription('');
+                    setShowAlbumMenu(false);
+                  }}
+                  className="px-3 py-1.5 rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {albumMenuMode === 'remove' && assetAlbums.length > 0 ? (
+                // Show remove from album section
+                <>
+                  <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
+                    Remove from:
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {assetAlbums.map((album) => (
+                      <button
+                        key={album.id}
+                        onClick={() => handleRemoveFromAlbumSelect(album.id)}
+                        className="w-full text-left px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-sm"
+                      >
+                        <div className="font-medium">{album.name}</div>
+                        {album.description && (
+                          <div className="text-xs text-zinc-500 truncate">{album.description}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                // Show add/move to album section
+                <>
+                  <button
+                    onClick={() => setIsCreatingAlbum(true)}
+                    className="w-full text-left px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-sm border-b border-zinc-200 dark:border-zinc-800"
+                  >
+                    <div className="font-medium text-blue-600 dark:text-blue-400">+ Create new album</div>
+                  </button>
+                  {albums.length > 0 ? (
+                    <div className="max-h-64 overflow-y-auto">
+                      {albums.map((album) => (
+                        <button
+                          key={album.id}
+                          onClick={() => handleAddToAlbumSelect(album.id)}
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-sm"
+                        >
+                          <div className="font-medium">{album.name}</div>
+                          {album.description && (
+                            <div className="text-xs text-zinc-500 truncate">{album.description}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </>
+          )}
+        </div>
       )}
       {/* Assign to Person Dialog */}
       {showAssignDialog && (

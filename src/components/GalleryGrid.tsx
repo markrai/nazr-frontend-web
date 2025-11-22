@@ -8,7 +8,7 @@ import { addAssetsToAlbum } from '../lib/albums';
 import { assetApi } from '../lib/api';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPrevious, hasPrevious, sort, order, isLoading, isFetchingNextPage, onAssetDeleted, mobileColumns, personId, filteredAssetIdsOverride }: {
+export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPrevious, hasPrevious, sort, order, isLoading, isFetchingNextPage, onAssetDeleted, mobileColumns, personId, filteredAssetIdsOverride, showRemoveFromAlbum }: {
   assets: Asset[];
   onLoadMore?: () => void;
   hasMore?: boolean;
@@ -22,6 +22,7 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
   mobileColumns?: number;
   personId?: number | null;
   filteredAssetIdsOverride?: number[];
+  showRemoveFromAlbum?: boolean; // Whether to show "Remove from Album" in bulk actions (only in albums view)
 }) {
   // Deduplicate assets by ID to prevent duplicate React keys
   const uniqueAssets = useMemo(() => {
@@ -664,6 +665,7 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
                     isCtrlPressed={isCtrlPressed}
                     personId={personId}
                     selectedIds={selectedIds}
+                    isInAlbumsView={showRemoveFromAlbum}
                   />
                 </div>
               );
@@ -694,6 +696,7 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
       {selectionMode && (
         <BulkActions
           selectedIds={selectedIds}
+          selectedAssetIds={Array.from(selectedIds)}
           onClearSelection={handleClearSelection}
           onAddToAlbum={handleAddToAlbum}
           onDelete={() => {
@@ -703,6 +706,7 @@ export default function GalleryGrid({ assets, onLoadMore, hasMore, onLoadPreviou
               handleBulkDelete();
             }
           }}
+          showRemoveFromAlbum={showRemoveFromAlbum}
         />
       )}
 

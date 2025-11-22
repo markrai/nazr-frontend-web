@@ -342,6 +342,7 @@ export default function AlbumsPage() {
                               sort="mtime"
                               order="desc"
                               filteredAssetIdsOverride={album.assetIds}
+                              showRemoveFromAlbum={true}
                             />
                           ) : (
                             <div className="text-center py-12 text-sm text-zinc-500">

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowDownTrayIcon, TrashIcon, ClipboardDocumentIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, TrashIcon, ClipboardDocumentIcon, UserPlusIcon, FolderPlusIcon, ArrowRightCircleIcon } from '@heroicons/react/24/outline';
 
 interface ContextMenuProps {
   x: number;
@@ -8,6 +8,9 @@ interface ContextMenuProps {
   onDownload: () => void;
   onDelete: () => void;
   onCopy: () => void;
+  onAddToAlbum?: () => void;
+  onMoveToAlbum?: () => void;
+  onRemoveFromAlbum?: () => void;
   onAssignToPerson?: () => void;
   showAssignToPerson?: boolean;
   onUnassignFromPerson?: () => void;
@@ -21,6 +24,9 @@ export default function ContextMenu({
   onDownload,
   onDelete,
   onCopy,
+  onAddToAlbum,
+  onMoveToAlbum,
+  onRemoveFromAlbum,
   onAssignToPerson,
   showAssignToPerson,
   onUnassignFromPerson,
@@ -126,6 +132,45 @@ export default function ContextMenu({
         </div>
         <kbd className="px-1.5 py-0.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded">C</kbd>
       </button>
+      {onAddToAlbum && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToAlbum();
+            // Don't close the menu - the album popup will handle that
+          }}
+          className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+        >
+          <FolderPlusIcon className="w-4 h-4" />
+          Add to Album
+        </button>
+      )}
+      {onMoveToAlbum && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveToAlbum();
+            // Don't close the menu - the album popup will handle that
+          }}
+          className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+        >
+          <ArrowRightCircleIcon className="w-4 h-4" />
+          Move to Album
+        </button>
+      )}
+      {onRemoveFromAlbum && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveFromAlbum();
+            // Don't close the menu - the album popup will handle that
+          }}
+          className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+        >
+          <FolderPlusIcon className="w-4 h-4" />
+          Remove from Album
+        </button>
+      )}
       {showAssignToPerson && onAssignToPerson && (
         <button
           onClick={(e) => {
