@@ -6,7 +6,7 @@ import GalleryGrid from '../components/GalleryGrid';
 import { useGalleryScrollRestoration } from '../lib/scroll';
 import Timeline from '../components/Timeline';
 import { Squares2X2Icon, ChevronRightIcon, ChevronDownIcon, FolderIcon } from '@heroicons/react/24/outline';
-import { useUIStore } from '../lib/store';
+import { useUIStore, type FontFamily } from '../lib/store';
 import { extractYearMonthFromPath, extractYearMonthFromFilename } from '../lib/folderStructure';
 import { organizeAssets } from '../lib/assetOrganization';
 import { useAdaptivePageSize } from '../lib/adaptiveLoading';
@@ -159,6 +159,31 @@ export default function Gallery() {
       return false;
     }
   });
+  // Get years/months font from store
+  const yearsMonthsFontFamily = useUIStore((s) => s.yearsMonthsFontFamily);
+  
+  // Helper function to get font family value
+  const getFontFamilyValue = (font: FontFamily): string => {
+    switch (font) {
+      case 'system':
+        return 'system-ui, -apple-system, sans-serif';
+      case 'sans-serif':
+        return 'sans-serif';
+      case 'serif':
+        return 'serif';
+      case 'monospace':
+        return 'monospace';
+      case 'cursive':
+        return 'cursive';
+      case 'fantasy':
+        return 'fantasy';
+      case 'yellowtail':
+        return "'Yellowtail', cursive";
+      default:
+        return 'system-ui, -apple-system, sans-serif';
+    }
+  };
+
   // Track which years are expanded - restore from sessionStorage on mount
   const [expandedYears, setExpandedYears] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
@@ -953,7 +978,10 @@ export default function Gallery() {
                                     <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-600 dark:text-zinc-400 flex-shrink-0" />
                                   )}
                                   <FolderIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                                  <h2 className="text-base sm:text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 font-mrs-sheppards flex-1 min-w-0">
+                                  <h2 
+                                    className="text-base sm:text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 flex-1 min-w-0"
+                                    style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
+                                  >
                                     {formatGroupLabel(groupKey)}
                                   </h2>
                                 </div>
@@ -1053,7 +1081,10 @@ export default function Gallery() {
                           <ChevronRightIcon className="w-5 h-5 text-zinc-600 dark:text-zinc-400 flex-shrink-0" />
                         )}
                         <FolderIcon className="w-6 h-6 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-100 font-mrs-sheppards">
+                        <h2 
+                          className="text-xl sm:text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-100"
+                          style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
+                        >
                           {formatGroupLabel(groupKey)}
                         </h2>
                         <span className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 ml-auto">
@@ -1062,7 +1093,10 @@ export default function Gallery() {
                       </div>
                     ) : (
                       // Normal view: regular heading
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-800 pb-1.5 sm:pb-2 font-mrs-sheppards">
+                      <h2 
+                        className="text-2xl sm:text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-800 pb-1.5 sm:pb-2"
+                        style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
+                      >
                         {formatGroupLabel(groupKey)}
                       </h2>
                     )}

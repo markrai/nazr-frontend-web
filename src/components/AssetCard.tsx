@@ -85,6 +85,8 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
 
   // Load albums for tags when in gallery view and setting is enabled
   const showAlbumTags = useUIStore((s) => s.showAlbumTags);
+  const albumTagFontColor = useUIStore((s) => s.albumTagFontColor);
+  const albumTagBackgroundColor = useUIStore((s) => s.albumTagBackgroundColor);
   useEffect(() => {
     if (!isInAlbumsView && showAlbumTags) {
       const loadAlbumsForTags = async () => {
@@ -508,7 +510,11 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
             {assetAlbums.slice(0, 3).map((album) => (
               <div
                 key={album.id}
-                className="px-2 py-0.5 rounded text-[10px] font-medium bg-black/70 dark:bg-white/90 text-white dark:text-black backdrop-blur-sm truncate"
+                className="px-2 py-0.5 rounded text-[10px] font-medium backdrop-blur-sm truncate"
+                style={{
+                  color: albumTagFontColor,
+                  backgroundColor: albumTagBackgroundColor,
+                }}
                 title={album.name}
               >
                 {album.name}
@@ -516,7 +522,11 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
             ))}
             {assetAlbums.length > 3 && (
               <div
-                className="px-2 py-0.5 rounded text-[10px] font-medium bg-black/70 dark:bg-white/90 text-white dark:text-black backdrop-blur-sm"
+                className="px-2 py-0.5 rounded text-[10px] font-medium backdrop-blur-sm"
+                style={{
+                  color: albumTagFontColor,
+                  backgroundColor: albumTagBackgroundColor,
+                }}
                 title={assetAlbums.slice(3).map(a => a.name).join(', ')}
               >
                 +{assetAlbums.length - 3} more

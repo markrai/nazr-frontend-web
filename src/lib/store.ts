@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 type Theme = 'system' | 'light' | 'dark';
 export type DefaultScreen = 'dashboard' | 'gallery' | 'search' | 'albums' | 'people';
-export type FontFamily = 'system' | 'serif' | 'sans-serif' | 'monospace' | 'cursive' | 'fantasy';
+export type FontFamily = 'system' | 'serif' | 'sans-serif' | 'monospace' | 'cursive' | 'fantasy' | 'yellowtail';
 
 interface UIState {
   gridSize: number; // min tile width
@@ -15,6 +15,8 @@ interface UIState {
   setDefaultScreen: (screen: DefaultScreen) => void;
   dashboardFontFamily: FontFamily;
   setDashboardFontFamily: (font: FontFamily) => void;
+  yearsMonthsFontFamily: FontFamily;
+  setYearsMonthsFontFamily: (font: FontFamily) => void;
   playbackSpeed: number;
   setPlaybackSpeed: (speed: number) => void;
   prioritizeFolderStructure: boolean;
@@ -29,6 +31,10 @@ interface UIState {
   setIsFetching: (value: boolean) => void;
   showAlbumTags: boolean;
   setShowAlbumTags: (show: boolean) => void;
+  albumTagFontColor: string;
+  setAlbumTagFontColor: (color: string) => void;
+  albumTagBackgroundColor: string;
+  setAlbumTagBackgroundColor: (color: string) => void;
 }
 
 const THEME_KEY = 'nazr.theme';
@@ -36,12 +42,15 @@ const GRID_KEY = 'nazr.gridSize';
 const DELETE_CONFIRM_KEY = 'nazr.showDeleteConfirmation';
 const DEFAULT_SCREEN_KEY = 'nazr.defaultScreen';
 const DASHBOARD_FONT_KEY = 'nazr.dashboardFontFamily';
+const YEARS_MONTHS_FONT_KEY = 'nazr.yearsMonthsFontFamily';
 const PLAYBACK_SPEED_KEY = 'nazr.playbackSpeed';
 const PRIORITIZE_FOLDER_STRUCTURE_KEY = 'nazr.prioritizeFolderStructure';
 const PRIORITIZE_FILENAME_DATE_KEY = 'nazr.prioritizeFilenameDate';
 const DELETE_ORIGINALS_KEY = 'nazr.deleteOriginalFiles';
 const SMART_MERGE_MODE_KEY = 'nazr.smartMergeMode';
 const SHOW_ALBUM_TAGS_KEY = 'nazr.showAlbumTags';
+const ALBUM_TAG_FONT_COLOR_KEY = 'nazr.albumTagFontColor';
+const ALBUM_TAG_BACKGROUND_COLOR_KEY = 'nazr.albumTagBackgroundColor';
 
 // Module-level variable to track system theme listener
 let systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;
@@ -145,6 +154,11 @@ export const useUIStore = create<UIState>((set, get) => {
       localStorage.setItem(DASHBOARD_FONT_KEY, font);
       set({ dashboardFontFamily: font });
     },
+    yearsMonthsFontFamily: (localStorage.getItem(YEARS_MONTHS_FONT_KEY) as FontFamily) || 'system',
+    setYearsMonthsFontFamily: (font) => {
+      localStorage.setItem(YEARS_MONTHS_FONT_KEY, font);
+      set({ yearsMonthsFontFamily: font });
+    },
     playbackSpeed: Number(localStorage.getItem(PLAYBACK_SPEED_KEY) || 1.0),
     setPlaybackSpeed: (speed) => {
       localStorage.setItem(PLAYBACK_SPEED_KEY, String(speed));
@@ -183,6 +197,16 @@ export const useUIStore = create<UIState>((set, get) => {
     setShowAlbumTags: (show) => {
       localStorage.setItem(SHOW_ALBUM_TAGS_KEY, String(show));
       set({ showAlbumTags: show });
+    },
+    albumTagFontColor: localStorage.getItem(ALBUM_TAG_FONT_COLOR_KEY) || '#ffffff',
+    setAlbumTagFontColor: (color) => {
+      localStorage.setItem(ALBUM_TAG_FONT_COLOR_KEY, color);
+      set({ albumTagFontColor: color });
+    },
+    albumTagBackgroundColor: localStorage.getItem(ALBUM_TAG_BACKGROUND_COLOR_KEY) || '#000000b3',
+    setAlbumTagBackgroundColor: (color) => {
+      localStorage.setItem(ALBUM_TAG_BACKGROUND_COLOR_KEY, color);
+      set({ albumTagBackgroundColor: color });
     },
   };
 });

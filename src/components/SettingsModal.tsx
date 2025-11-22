@@ -61,6 +61,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const setDefaultScreen = useUIStore((s) => s.setDefaultScreen);
   const dashboardFontFamily = useUIStore((s) => s.dashboardFontFamily);
   const setDashboardFontFamily = useUIStore((s) => s.setDashboardFontFamily);
+  const yearsMonthsFontFamily = useUIStore((s) => s.yearsMonthsFontFamily);
+  const setYearsMonthsFontFamily = useUIStore((s) => s.setYearsMonthsFontFamily);
   const showDeleteConfirmation = useUIStore((s) => s.showDeleteConfirmation);
   const setShowDeleteConfirmation = useUIStore((s) => s.setShowDeleteConfirmation);
   const prioritizeFolderStructure = useUIStore((s) => s.prioritizeFolderStructure);
@@ -73,6 +75,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const setSmartMergeLevel = useUIStore((s) => s.setSmartMergeLevel);
   const showAlbumTags = useUIStore((s) => s.showAlbumTags);
   const setShowAlbumTags = useUIStore((s) => s.setShowAlbumTags);
+  const albumTagFontColor = useUIStore((s) => s.albumTagFontColor);
+  const setAlbumTagFontColor = useUIStore((s) => s.setAlbumTagFontColor);
+  const albumTagBackgroundColor = useUIStore((s) => s.albumTagBackgroundColor);
+  const setAlbumTagBackgroundColor = useUIStore((s) => s.setAlbumTagBackgroundColor);
   const [activeTab, setActiveTab] = useState<'general' | 'tags' | 'fonts' | 'organization' | 'about'>('general');
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
@@ -173,6 +179,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         return 'cursive';
       case 'fantasy':
         return 'fantasy';
+      case 'yellowtail':
+        return "'Yellowtail', cursive";
       default:
         return 'system-ui, -apple-system, sans-serif';
     }
@@ -482,15 +490,69 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                               When enabled, photos in the gallery will show small tags with album names in the top right corner. Tags are stacked when photos are in multiple albums.
                             </p>
                           </div>
+
+                          {/* Tag Styling */}
+                          {showAlbumTags && (
+                            <div>
+                              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                                Album Tags Styling
+                              </label>
+                              <div className="grid grid-cols-3 gap-4 items-center">
+                                {/* Preview */}
+                                <div className="p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 relative" style={{ minHeight: '60px' }}>
+                                  <div className="absolute top-2 right-2">
+                                    <div
+                                      className="px-2 py-0.5 rounded text-[10px] font-medium backdrop-blur-sm"
+                                      style={{
+                                        color: albumTagFontColor,
+                                        backgroundColor: albumTagBackgroundColor,
+                                      }}
+                                    >
+                                      Sample Album
+                                    </div>
+                                  </div>
+                                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 absolute bottom-2 left-2">
+                                    Preview
+                                  </p>
+                                </div>
+
+                                {/* Font Color */}
+                                <div className="flex items-center gap-2">
+                                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                                    Font Color:
+                                  </label>
+                                  <input
+                                    type="color"
+                                    value={albumTagFontColor}
+                                    onChange={(e) => setAlbumTagFontColor(e.target.value)}
+                                    className="w-12 h-10 rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                                  />
+                                </div>
+
+                                {/* Background Color */}
+                                <div className="flex items-center gap-2">
+                                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                                    Background:
+                                  </label>
+                                  <input
+                                    type="color"
+                                    value={albumTagBackgroundColor}
+                                    onChange={(e) => setAlbumTagBackgroundColor(e.target.value)}
+                                    className="w-12 h-10 rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </>
                       )}
 
                       {activeTab === 'fonts' && (
                         <>
-                          {/* Dashboard Font */}
+                          {/* Dashboard Stats Font */}
                           <div>
                             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
-                              Dashboard Font
+                              Dashboard Stats Font
                             </label>
                             <select
                               value={dashboardFontFamily}
@@ -504,9 +566,34 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                               <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
                               <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
                               <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
+                              <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
                             </select>
                             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                              Font family for dashboard text.
+                              Font family for dashboard stats text.
+                            </p>
+                          </div>
+
+                          {/* Years & Months Font */}
+                          <div>
+                            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                              Years & Months
+                            </label>
+                            <select
+                              value={yearsMonthsFontFamily}
+                              onChange={(e) => setYearsMonthsFontFamily(e.target.value as FontFamily)}
+                              className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
+                            >
+                              <option value="system" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>System</option>
+                              <option value="sans-serif" style={{ fontFamily: 'sans-serif' }}>Sans-serif</option>
+                              <option value="serif" style={{ fontFamily: 'serif' }}>Serif</option>
+                              <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
+                              <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
+                              <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
+                              <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
+                            </select>
+                            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                              Font family for year and month labels in the gallery view.
                             </p>
                           </div>
                         </>
