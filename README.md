@@ -16,7 +16,17 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
+Open http://localhost:5173 in your browser (Vite's default port).
+
+### Development with Docker (Windows)
+
+Alternatively, you can use the provided `dev.bat` script to run the frontend in a Docker container:
+
+```bash
+dev.bat
+```
+
+This will build and run the frontend in Docker, accessible at http://localhost:3000.
 
 ## Docker Image
 
