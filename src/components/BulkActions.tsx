@@ -53,8 +53,9 @@ export default function BulkActions({ selectedIds, selectedAssetIds, onClearSele
   const handleAddToAlbum = async (albumId: string) => {
     const assetIds = Array.from(selectedIds);
     
-    // If any assets are in albums, remove from all current albums first (Move behavior)
-    if (hasAssetsInAlbums) {
+    // If in Albums view (showRemoveFromAlbum is true), remove from all current albums first (Move behavior)
+    // If in Gallery view, just add without removing (supports multiple albums)
+    if (showRemoveFromAlbum && hasAssetsInAlbums) {
       for (const assetId of assetIds) {
         const assetAlbums = assetsInAlbums.get(assetId) || [];
         for (const album of assetAlbums) {
@@ -114,8 +115,9 @@ export default function BulkActions({ selectedIds, selectedAssetIds, onClearSele
     try {
       const assetIds = Array.from(selectedIds);
       
-      // If any assets are in albums, remove from all current albums first (Move behavior)
-      if (hasAssetsInAlbums) {
+      // If in Albums view (showRemoveFromAlbum is true), remove from all current albums first (Move behavior)
+      // If in Gallery view, just add without removing (supports multiple albums)
+      if (showRemoveFromAlbum && hasAssetsInAlbums) {
         for (const assetId of assetIds) {
           const assetAlbums = assetsInAlbums.get(assetId) || [];
           for (const album of assetAlbums) {
@@ -171,7 +173,7 @@ export default function BulkActions({ selectedIds, selectedAssetIds, onClearSele
             }}
             className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs sm:text-sm transition-colors flex items-center gap-1.5 sm:gap-2"
           >
-            {hasAssetsInAlbums ? (
+            {showRemoveFromAlbum && hasAssetsInAlbums ? (
               <>
                 <ArrowRightCircleIcon className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                 <span className="hidden sm:inline">Move to Album</span>

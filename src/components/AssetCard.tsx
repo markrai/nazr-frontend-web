@@ -282,15 +282,16 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
 
   const handleAddToAlbumSelect = async (albumId: string) => {
     try {
-      // If asset is already in albums, remove from all current albums first (Move behavior)
-      if (assetAlbums.length > 0) {
+      // If in Albums view, remove from all current albums first (Move behavior)
+      // If in Gallery view, just add without removing (supports multiple albums)
+      if (isInAlbumsView && assetAlbums.length > 0) {
         for (const album of assetAlbums) {
           await removeAssetsFromAlbum(album.id, [asset.id]);
         }
       }
       // Add to new album
       await addAssetsToAlbum(albumId, [asset.id]);
-      showNotification(assetAlbums.length > 0 ? 'Moved to album!' : 'Added to album!');
+      showNotification(isInAlbumsView && assetAlbums.length > 0 ? 'Moved to album!' : 'Added to album!');
       // Refresh asset albums
       const updatedAlbums = await getAlbumsForAsset(asset.id);
       setAssetAlbums(updatedAlbums);
@@ -325,8 +326,9 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
     try {
       const newAlbum = await createAlbum(newAlbumName.trim(), newAlbumDescription.trim() || undefined);
       
-      // If asset is already in albums, remove from all current albums first (Move behavior)
-      if (assetAlbums.length > 0) {
+      // If in Albums view, remove from all current albums first (Move behavior)
+      // If in Gallery view, just add without removing (supports multiple albums)
+      if (isInAlbumsView && assetAlbums.length > 0) {
         for (const album of assetAlbums) {
           await removeAssetsFromAlbum(album.id, [asset.id]);
         }
@@ -347,7 +349,7 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
       setNewAlbumName('');
       setNewAlbumDescription('');
       setShowAlbumMenu(false);
-      showNotification(assetAlbums.length > 0 ? 'Created album and moved photo!' : 'Created album and added photo!');
+      showNotification(isInAlbumsView && assetAlbums.length > 0 ? 'Created album and moved photo!' : 'Created album and added photo!');
     } catch (error) {
       console.error('Failed to create album:', error);
       alert('Failed to create album. Please try again.');
@@ -584,9 +586,9 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
           onDownload={handleDownload}
           onDelete={handleDeleteClick}
           onCopy={handleCopy}
-          onAddToAlbum={(!isInAlbumsView && assetAlbums.length === 0) ? handleAddToAlbum : undefined}
-          onMoveToAlbum={(isInAlbumsView || assetAlbums.length > 0) ? handleMoveToAlbum : undefined}
-          onRemoveFromAlbum={assetAlbums.length > 0 ? () => handleRemoveFromAlbum() : undefined}
+          onAddToAlbum={!isInAlbumsView ? handleAddToAlbum : undefined}
+          onMoveToAlbum={isInAlbumsView && assetAlbums.length > 0 ? handleMoveToAlbum : undefined}
+          onRemoveFromAlbum={isInAlbumsView && assetAlbums.length > 0 ? () => handleRemoveFromAlbum() : undefined}
           onAssignToPerson={handleAssignToPerson}
           showAssignToPerson={!!personId}
           onUnassignFromPerson={personId ? handleUnassignFromPerson : undefined}
