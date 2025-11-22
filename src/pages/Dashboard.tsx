@@ -464,6 +464,7 @@ export default function Dashboard() {
   }, []);
 
   const dashboardFontFamily = useUIStore((s) => s.dashboardFontFamily);
+  const dashboardFontSize = useUIStore((s) => s.dashboardFontSize);
   
   const getFontFamilyValue = (font: string): string => {
     switch (font) {
@@ -484,8 +485,26 @@ export default function Dashboard() {
     }
   };
 
+  // Helper function to get font size class
+  const getFontSizeClass = (size: string): string => {
+    const sizeMap: Record<string, string> = {
+      'xs': 'text-xs',
+      'sm': 'text-sm',
+      'base': 'text-base',
+      'lg': 'text-lg',
+      'xl': 'text-xl',
+      '2xl': 'text-2xl',
+      '3xl': 'text-3xl',
+      '4xl': 'text-4xl',
+    };
+    return sizeMap[size] || 'text-base';
+  };
+
   return (
-    <div className="container-responsive py-3 sm:py-6 space-y-3 sm:space-y-6" style={{ fontFamily: getFontFamilyValue(dashboardFontFamily) }}>
+    <div 
+      className={`container-responsive py-3 sm:py-6 space-y-3 sm:space-y-6 ${getFontSizeClass(dashboardFontSize)}`}
+      style={{ fontFamily: getFontFamilyValue(dashboardFontFamily) }}
+    >
 
       {statsIsError && statsError && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 rounded-lg p-4">

@@ -1,7 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState } from 'react';
 import { MoonIcon, SunIcon, ComputerDesktopIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useUIStore, type DefaultScreen, type FontFamily } from '../lib/store';
+import { useUIStore, type DefaultScreen, type FontFamily, type FontSize } from '../lib/store';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import ConfirmDialog from './ConfirmDialog';
@@ -61,8 +61,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const setDefaultScreen = useUIStore((s) => s.setDefaultScreen);
   const dashboardFontFamily = useUIStore((s) => s.dashboardFontFamily);
   const setDashboardFontFamily = useUIStore((s) => s.setDashboardFontFamily);
+  const dashboardFontSize = useUIStore((s) => s.dashboardFontSize);
+  const setDashboardFontSize = useUIStore((s) => s.setDashboardFontSize);
   const yearsMonthsFontFamily = useUIStore((s) => s.yearsMonthsFontFamily);
   const setYearsMonthsFontFamily = useUIStore((s) => s.setYearsMonthsFontFamily);
+  const yearsMonthsFontSize = useUIStore((s) => s.yearsMonthsFontSize);
+  const setYearsMonthsFontSize = useUIStore((s) => s.setYearsMonthsFontSize);
+  const albumHeadingFontFamily = useUIStore((s) => s.albumHeadingFontFamily);
+  const setAlbumHeadingFontFamily = useUIStore((s) => s.setAlbumHeadingFontFamily);
+  const albumHeadingFontSize = useUIStore((s) => s.albumHeadingFontSize);
+  const setAlbumHeadingFontSize = useUIStore((s) => s.setAlbumHeadingFontSize);
   const showDeleteConfirmation = useUIStore((s) => s.showDeleteConfirmation);
   const setShowDeleteConfirmation = useUIStore((s) => s.setShowDeleteConfirmation);
   const prioritizeFolderStructure = useUIStore((s) => s.prioritizeFolderStructure);
@@ -554,20 +562,36 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
                               Dashboard Stats Font
                             </label>
-                            <select
-                              value={dashboardFontFamily}
-                              onChange={(e) => setDashboardFontFamily(e.target.value as FontFamily)}
-                              className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              style={{ fontFamily: getFontFamilyValue(dashboardFontFamily) }}
-                            >
-                              <option value="system" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>System</option>
-                              <option value="sans-serif" style={{ fontFamily: 'sans-serif' }}>Sans-serif</option>
-                              <option value="serif" style={{ fontFamily: 'serif' }}>Serif</option>
-                              <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
-                              <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
-                              <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
-                              <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
-                            </select>
+                            <div className="grid grid-cols-2 gap-3">
+                              <select
+                                value={dashboardFontFamily}
+                                onChange={(e) => setDashboardFontFamily(e.target.value as FontFamily)}
+                                className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                style={{ fontFamily: getFontFamilyValue(dashboardFontFamily) }}
+                              >
+                                <option value="system" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>System</option>
+                                <option value="sans-serif" style={{ fontFamily: 'sans-serif' }}>Sans-serif</option>
+                                <option value="serif" style={{ fontFamily: 'serif' }}>Serif</option>
+                                <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
+                                <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
+                                <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
+                                <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
+                              </select>
+                              <select
+                                value={dashboardFontSize}
+                                onChange={(e) => setDashboardFontSize(e.target.value as FontSize)}
+                                className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="xs">Extra Small</option>
+                                <option value="sm">Small</option>
+                                <option value="base">Base</option>
+                                <option value="lg">Large</option>
+                                <option value="xl">Extra Large</option>
+                                <option value="2xl">2X Large</option>
+                                <option value="3xl">3X Large</option>
+                                <option value="4xl">4X Large</option>
+                              </select>
+                            </div>
                             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                               Font family for dashboard stats text.
                             </p>
@@ -578,22 +602,78 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
                               Years & Months
                             </label>
-                            <select
-                              value={yearsMonthsFontFamily}
-                              onChange={(e) => setYearsMonthsFontFamily(e.target.value as FontFamily)}
-                              className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
-                            >
-                              <option value="system" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>System</option>
-                              <option value="sans-serif" style={{ fontFamily: 'sans-serif' }}>Sans-serif</option>
-                              <option value="serif" style={{ fontFamily: 'serif' }}>Serif</option>
-                              <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
-                              <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
-                              <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
-                              <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
-                            </select>
+                            <div className="grid grid-cols-2 gap-3">
+                              <select
+                                value={yearsMonthsFontFamily}
+                                onChange={(e) => setYearsMonthsFontFamily(e.target.value as FontFamily)}
+                                className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
+                              >
+                                <option value="system" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>System</option>
+                                <option value="sans-serif" style={{ fontFamily: 'sans-serif' }}>Sans-serif</option>
+                                <option value="serif" style={{ fontFamily: 'serif' }}>Serif</option>
+                                <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
+                                <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
+                                <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
+                                <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
+                              </select>
+                              <select
+                                value={yearsMonthsFontSize}
+                                onChange={(e) => setYearsMonthsFontSize(e.target.value as FontSize)}
+                                className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="xs">Extra Small</option>
+                                <option value="sm">Small</option>
+                                <option value="base">Base</option>
+                                <option value="lg">Large</option>
+                                <option value="xl">Extra Large</option>
+                                <option value="2xl">2X Large</option>
+                                <option value="3xl">3X Large</option>
+                                <option value="4xl">4X Large</option>
+                              </select>
+                            </div>
                             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                               Font family for year and month labels in the gallery view.
+                            </p>
+                          </div>
+
+                          {/* Album Heading Font */}
+                          <div>
+                            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                              Album Heading
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <select
+                                value={albumHeadingFontFamily}
+                                onChange={(e) => setAlbumHeadingFontFamily(e.target.value as FontFamily)}
+                                className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                style={{ fontFamily: getFontFamilyValue(albumHeadingFontFamily) }}
+                              >
+                                <option value="system" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>System</option>
+                                <option value="sans-serif" style={{ fontFamily: 'sans-serif' }}>Sans-serif</option>
+                                <option value="serif" style={{ fontFamily: 'serif' }}>Serif</option>
+                                <option value="monospace" style={{ fontFamily: 'monospace' }}>Monospace</option>
+                                <option value="cursive" style={{ fontFamily: 'cursive' }}>Cursive</option>
+                                <option value="fantasy" style={{ fontFamily: 'fantasy' }}>Fantasy</option>
+                                <option value="yellowtail" style={{ fontFamily: "'Yellowtail', cursive" }}>Yellowtail</option>
+                              </select>
+                              <select
+                                value={albumHeadingFontSize}
+                                onChange={(e) => setAlbumHeadingFontSize(e.target.value as FontSize)}
+                                className="w-full p-3 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="xs">Extra Small</option>
+                                <option value="sm">Small</option>
+                                <option value="base">Base</option>
+                                <option value="lg">Large</option>
+                                <option value="xl">Extra Large</option>
+                                <option value="2xl">2X Large</option>
+                                <option value="3xl">3X Large</option>
+                                <option value="4xl">4X Large</option>
+                              </select>
+                            </div>
+                            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                              Font family for album names in the albums view.
                             </p>
                           </div>
                         </>

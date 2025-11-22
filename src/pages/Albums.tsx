@@ -11,6 +11,7 @@ import {
 import { useAssetsInfinite } from '../lib/hooks';
 import GalleryGrid from '../components/GalleryGrid';
 import { useAdaptivePageSize } from '../lib/adaptiveLoading';
+import { useUIStore, type FontFamily } from '../lib/store';
 
 const ALBUMS_EXPANDED_KEY = 'nazr.albums.expanded';
 
@@ -23,6 +24,45 @@ export default function AlbumsPage() {
   const [editDescription, setEditDescription] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { pageSize: adaptivePageSize } = useAdaptivePageSize();
+  const albumHeadingFontFamily = useUIStore((s) => s.albumHeadingFontFamily);
+  const albumHeadingFontSize = useUIStore((s) => s.albumHeadingFontSize);
+  
+  // Helper function to get font family value
+  const getFontFamilyValue = (font: FontFamily): string => {
+    switch (font) {
+      case 'system':
+        return 'system-ui, -apple-system, sans-serif';
+      case 'sans-serif':
+        return 'sans-serif';
+      case 'serif':
+        return 'serif';
+      case 'monospace':
+        return 'monospace';
+      case 'cursive':
+        return 'cursive';
+      case 'fantasy':
+        return 'fantasy';
+      case 'yellowtail':
+        return "'Yellowtail', cursive";
+      default:
+        return 'system-ui, -apple-system, sans-serif';
+    }
+  };
+
+  // Helper function to get font size class
+  const getFontSizeClass = (size: string): string => {
+    const sizeMap: Record<string, string> = {
+      'xs': 'text-xs',
+      'sm': 'text-sm',
+      'base': 'text-base',
+      'lg': 'text-lg',
+      'xl': 'text-xl',
+      '2xl': 'text-2xl',
+      '3xl': 'text-3xl',
+      '4xl': 'text-4xl',
+    };
+    return sizeMap[size] || 'text-base';
+  };
   
   // Track which albums are expanded - restore from sessionStorage on mount
   const [expandedAlbums, setExpandedAlbums] = useState<Set<string>>(() => {
@@ -291,7 +331,10 @@ export default function AlbumsPage() {
                               <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-600 dark:text-zinc-400 flex-shrink-0" />
                             )}
                             <FolderIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                            <h2 className="text-base sm:text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 font-mrs-sheppards flex-1 min-w-0 truncate">
+                            <h2 
+                              className={`${getFontSizeClass(albumHeadingFontSize)} font-semibold text-zinc-900 dark:text-zinc-100 flex-1 min-w-0 truncate`}
+                              style={{ fontFamily: getFontFamilyValue(albumHeadingFontFamily) }}
+                            >
                               {album.name}
                             </h2>
                           </div>

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 type Theme = 'system' | 'light' | 'dark';
 export type DefaultScreen = 'dashboard' | 'gallery' | 'search' | 'albums' | 'people';
 export type FontFamily = 'system' | 'serif' | 'sans-serif' | 'monospace' | 'cursive' | 'fantasy' | 'yellowtail';
+export type FontSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
 
 interface UIState {
   gridSize: number; // min tile width
@@ -15,8 +16,16 @@ interface UIState {
   setDefaultScreen: (screen: DefaultScreen) => void;
   dashboardFontFamily: FontFamily;
   setDashboardFontFamily: (font: FontFamily) => void;
+  dashboardFontSize: FontSize;
+  setDashboardFontSize: (size: FontSize) => void;
   yearsMonthsFontFamily: FontFamily;
   setYearsMonthsFontFamily: (font: FontFamily) => void;
+  yearsMonthsFontSize: FontSize;
+  setYearsMonthsFontSize: (size: FontSize) => void;
+  albumHeadingFontFamily: FontFamily;
+  setAlbumHeadingFontFamily: (font: FontFamily) => void;
+  albumHeadingFontSize: FontSize;
+  setAlbumHeadingFontSize: (size: FontSize) => void;
   playbackSpeed: number;
   setPlaybackSpeed: (speed: number) => void;
   prioritizeFolderStructure: boolean;
@@ -42,7 +51,11 @@ const GRID_KEY = 'nazr.gridSize';
 const DELETE_CONFIRM_KEY = 'nazr.showDeleteConfirmation';
 const DEFAULT_SCREEN_KEY = 'nazr.defaultScreen';
 const DASHBOARD_FONT_KEY = 'nazr.dashboardFontFamily';
+const DASHBOARD_FONT_SIZE_KEY = 'nazr.dashboardFontSize';
 const YEARS_MONTHS_FONT_KEY = 'nazr.yearsMonthsFontFamily';
+const YEARS_MONTHS_FONT_SIZE_KEY = 'nazr.yearsMonthsFontSize';
+const ALBUM_HEADING_FONT_KEY = 'nazr.albumHeadingFontFamily';
+const ALBUM_HEADING_FONT_SIZE_KEY = 'nazr.albumHeadingFontSize';
 const PLAYBACK_SPEED_KEY = 'nazr.playbackSpeed';
 const PRIORITIZE_FOLDER_STRUCTURE_KEY = 'nazr.prioritizeFolderStructure';
 const PRIORITIZE_FILENAME_DATE_KEY = 'nazr.prioritizeFilenameDate';
@@ -154,10 +167,30 @@ export const useUIStore = create<UIState>((set, get) => {
       localStorage.setItem(DASHBOARD_FONT_KEY, font);
       set({ dashboardFontFamily: font });
     },
+    dashboardFontSize: (localStorage.getItem(DASHBOARD_FONT_SIZE_KEY) as FontSize) || 'base',
+    setDashboardFontSize: (size) => {
+      localStorage.setItem(DASHBOARD_FONT_SIZE_KEY, size);
+      set({ dashboardFontSize: size });
+    },
     yearsMonthsFontFamily: (localStorage.getItem(YEARS_MONTHS_FONT_KEY) as FontFamily) || 'system',
     setYearsMonthsFontFamily: (font) => {
       localStorage.setItem(YEARS_MONTHS_FONT_KEY, font);
       set({ yearsMonthsFontFamily: font });
+    },
+    yearsMonthsFontSize: (localStorage.getItem(YEARS_MONTHS_FONT_SIZE_KEY) as FontSize) || 'base',
+    setYearsMonthsFontSize: (size) => {
+      localStorage.setItem(YEARS_MONTHS_FONT_SIZE_KEY, size);
+      set({ yearsMonthsFontSize: size });
+    },
+    albumHeadingFontFamily: (localStorage.getItem(ALBUM_HEADING_FONT_KEY) as FontFamily) || 'yellowtail',
+    setAlbumHeadingFontFamily: (font) => {
+      localStorage.setItem(ALBUM_HEADING_FONT_KEY, font);
+      set({ albumHeadingFontFamily: font });
+    },
+    albumHeadingFontSize: (localStorage.getItem(ALBUM_HEADING_FONT_SIZE_KEY) as FontSize) || 'base',
+    setAlbumHeadingFontSize: (size) => {
+      localStorage.setItem(ALBUM_HEADING_FONT_SIZE_KEY, size);
+      set({ albumHeadingFontSize: size });
     },
     playbackSpeed: Number(localStorage.getItem(PLAYBACK_SPEED_KEY) || 1.0),
     setPlaybackSpeed: (speed) => {

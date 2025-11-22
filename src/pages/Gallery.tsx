@@ -161,6 +161,7 @@ export default function Gallery() {
   });
   // Get years/months font from store
   const yearsMonthsFontFamily = useUIStore((s) => s.yearsMonthsFontFamily);
+  const yearsMonthsFontSize = useUIStore((s) => s.yearsMonthsFontSize);
   
   // Helper function to get font family value
   const getFontFamilyValue = (font: FontFamily): string => {
@@ -182,6 +183,21 @@ export default function Gallery() {
       default:
         return 'system-ui, -apple-system, sans-serif';
     }
+  };
+
+  // Helper function to get font size class
+  const getFontSizeClass = (size: string): string => {
+    const sizeMap: Record<string, string> = {
+      'xs': 'text-xs',
+      'sm': 'text-sm',
+      'base': 'text-base',
+      'lg': 'text-lg',
+      'xl': 'text-xl',
+      '2xl': 'text-2xl',
+      '3xl': 'text-3xl',
+      '4xl': 'text-4xl',
+    };
+    return sizeMap[size] || 'text-base';
   };
 
   // Track which years are expanded - restore from sessionStorage on mount
@@ -979,7 +995,7 @@ export default function Gallery() {
                                   )}
                                   <FolderIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 dark:text-blue-400 flex-shrink-0" />
                                   <h2 
-                                    className="text-base sm:text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 flex-1 min-w-0"
+                                    className={`${getFontSizeClass(yearsMonthsFontSize)} font-semibold text-zinc-900 dark:text-zinc-100 flex-1 min-w-0`}
                                     style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
                                   >
                                     {formatGroupLabel(groupKey)}
@@ -1082,7 +1098,7 @@ export default function Gallery() {
                         )}
                         <FolderIcon className="w-6 h-6 text-blue-500 dark:text-blue-400 flex-shrink-0" />
                         <h2 
-                          className="text-xl sm:text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-100"
+                          className={`${getFontSizeClass(yearsMonthsFontSize)} font-semibold text-zinc-900 dark:text-zinc-100`}
                           style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
                         >
                           {formatGroupLabel(groupKey)}
@@ -1094,7 +1110,7 @@ export default function Gallery() {
                     ) : (
                       // Normal view: regular heading
                       <h2 
-                        className="text-2xl sm:text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-800 pb-1.5 sm:pb-2"
+                        className={`${getFontSizeClass(yearsMonthsFontSize)} font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-800 pb-1.5 sm:pb-2`}
                         style={{ fontFamily: getFontFamilyValue(yearsMonthsFontFamily) }}
                       >
                         {formatGroupLabel(groupKey)}
