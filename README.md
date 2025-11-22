@@ -1,4 +1,5 @@
-![Logo](public/logo.png)
+
+<img width="5000" height="2000" alt="Nazr" src="https://github.com/user-attachments/assets/d137d955-cc80-4e5b-9701-6881fe479520" />
 
 # Nazr Web v0.8.0
 
