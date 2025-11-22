@@ -367,16 +367,35 @@ export default function AssetDetail() {
   // Find the current index in the navigation assets (filtered or all)
   const currentNavigationIndex = useMemo(() => {
     if (!currentAsset) return 0;
+    
+    // If we have filteredAssetIds and an index from state, use that index
+    // (it's based on the full filtered list, not just loaded assets)
+    if (state?.filteredAssetIds && state.index !== undefined) {
+      // Validate that the index is within bounds
+      const maxIndex = state.filteredAssetIds.length - 1;
+      if (state.index >= 0 && state.index <= maxIndex) {
+        return state.index;
+      }
+      // If index is out of bounds, try to find the asset in the filtered list
+      const indexInFiltered = state.filteredAssetIds.indexOf(currentAsset.id);
+      if (indexInFiltered >= 0) {
+        return indexInFiltered;
+      }
+    }
+    
+    // Fallback: try to find the asset in navigationAssets
     const index = navigationAssets.findIndex(a => a.id === currentAsset.id);
     if (index >= 0) {
       return index;
     }
+    
+    // Last resort: use state.index if available, or 0
     const fallback = state?.index ?? 0;
     if (navigationAssets.length === 0) {
       return 0;
     }
     return Math.min(Math.max(0, fallback), navigationAssets.length - 1);
-  }, [currentAsset, navigationAssets, state?.index]);
+  }, [currentAsset, navigationAssets, state?.index, state?.filteredAssetIds]);
 
   // Update currentIndex when navigation assets or current asset changes
   useEffect(() => {
@@ -533,28 +552,74 @@ export default function AssetDetail() {
         if (navigationAssets.length === 0) {
           goBackToSource();
         } else {
-          // Try to navigate to the asset at the same index, or the last one
-          const newIndex = Math.min(currentIndex, navigationAssets.length - 1);
-          if (newIndex >= 0) {
-            const newAsset = navigationAssets[newIndex];
-            nav(`/asset/${newAsset.id}`, {
-              state: {
-                asset: newAsset,
-                index: newIndex,
-                sort,
-                order,
-                filteredAssetIds: state?.filteredAssetIds, // Preserve filtered asset IDs
-                from: fromLocation,
-              },
-              replace: true,
-            });
+          // When an asset is deleted, we want to navigate to the next asset in the sequence
+          // Use filteredAssetIds to find the correct next asset, not navigationAssets
+          // (which might not be updated yet)
+          let nextAssetId: number | null = null;
+          let nextIndex = currentIndex;
+          
+          if (state?.filteredAssetIds && state.filteredAssetIds.length > 0) {
+            // Find the deleted asset's index in the filtered list
+            const deletedIndexInFiltered = state.filteredAssetIds.indexOf(currentAsset.id);
+            
+            if (deletedIndexInFiltered >= 0) {
+              // Find the next asset in the filtered list (skip the deleted one)
+              // Try the asset at deletedIndexInFiltered + 1, or if that's the end, use deletedIndexInFiltered - 1
+              if (deletedIndexInFiltered < state.filteredAssetIds.length - 1) {
+                // There's a next asset in the filtered list
+                nextAssetId = state.filteredAssetIds[deletedIndexInFiltered + 1];
+                nextIndex = deletedIndexInFiltered; // After deletion, this becomes the new index
+              } else if (deletedIndexInFiltered > 0) {
+                // We're at the end, go to the previous asset
+                nextAssetId = state.filteredAssetIds[deletedIndexInFiltered - 1];
+                nextIndex = deletedIndexInFiltered - 1;
+              }
+            }
+          } else {
+            // No filteredAssetIds, use navigationAssets
+            if (currentIndex < navigationAssets.length) {
+              // Stay at the same index (which now points to the next asset)
+              nextAssetId = navigationAssets[currentIndex].id;
+              nextIndex = currentIndex;
+            } else if (navigationAssets.length > 0) {
+              // Beyond the end, go to the last asset
+              nextAssetId = navigationAssets[navigationAssets.length - 1].id;
+              nextIndex = navigationAssets.length - 1;
+            }
+          }
+          
+          if (nextAssetId !== null) {
+            // Find the asset in navigationAssets or allAssets
+            const nextAsset = navigationAssets.find(a => a.id === nextAssetId) 
+              || allAssets.find(a => a.id === nextAssetId);
+            
+            if (nextAsset) {
+              // Create updated filteredAssetIds without the deleted asset
+              const updatedFilteredIds = state?.filteredAssetIds 
+                ? state.filteredAssetIds.filter(id => id !== currentAsset.id)
+                : undefined;
+              
+              nav(`/asset/${nextAsset.id}`, {
+                state: {
+                  asset: nextAsset,
+                  index: nextIndex,
+                  sort,
+                  order,
+                  filteredAssetIds: updatedFilteredIds,
+                  from: fromLocation,
+                },
+                replace: true,
+              });
+            } else {
+              goBackToSource();
+            }
           } else {
             goBackToSource();
           }
         }
       }
     }
-  }, [currentAsset, navigationAssets, currentIndex, nav, sort, order, deletedAssetIds, goBackToSource, state?.filteredAssetIds, fromLocation]);
+  }, [currentAsset, navigationAssets, allAssets, currentIndex, nav, sort, order, deletedAssetIds, goBackToSource, state?.filteredAssetIds, fromLocation]);
 
   // Handle navigation after deletion and refetch completes
   useEffect(() => {
@@ -619,15 +684,19 @@ export default function AssetDetail() {
           e.preventDefault();
           handleDeleteClick(currentAsset.id);
         }
-      } else if (e.key === 'ArrowLeft' && !showLightbox && currentAsset && navigationAssets.length > 0) {
+      } else if (e.key === 'ArrowLeft' && !showLightbox && currentAsset) {
         // Use currentIndex which is already synced with navigationAssets
-        if (currentIndex > 0) {
+        // Check against filteredAssetIds length if available, otherwise navigationAssets length
+        const maxIndex = state?.filteredAssetIds ? state.filteredAssetIds.length : navigationAssets.length;
+        if (maxIndex > 0 && currentIndex > 0) {
           e.preventDefault();
           handleNavigate(currentIndex - 1);
         }
-      } else if (e.key === 'ArrowRight' && !showLightbox && currentAsset && navigationAssets.length > 0) {
+      } else if (e.key === 'ArrowRight' && !showLightbox && currentAsset) {
         // Use currentIndex which is already synced with navigationAssets
-        if (currentIndex >= 0 && currentIndex < navigationAssets.length - 1) {
+        // Check against filteredAssetIds length if available, otherwise navigationAssets length
+        const maxIndex = state?.filteredAssetIds ? state.filteredAssetIds.length : navigationAssets.length;
+        if (maxIndex > 0 && currentIndex >= 0 && currentIndex < maxIndex - 1) {
           e.preventDefault();
           handleNavigate(currentIndex + 1);
         }
