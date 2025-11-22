@@ -71,7 +71,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const setDeleteOriginalFiles = useUIStore((s) => s.setDeleteOriginalFiles);
   const smartMergeLevel = useUIStore((s) => s.smartMergeLevel);
   const setSmartMergeLevel = useUIStore((s) => s.setSmartMergeLevel);
-  const [activeTab, setActiveTab] = useState<'general' | 'fonts' | 'organization' | 'about'>('general');
+  const showAlbumTags = useUIStore((s) => s.showAlbumTags);
+  const setShowAlbumTags = useUIStore((s) => s.setShowAlbumTags);
+  const [activeTab, setActiveTab] = useState<'general' | 'tags' | 'fonts' | 'organization' | 'about'>('general');
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
   const [clearError, setClearError] = useState<string | null>(null);
@@ -228,6 +230,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         }`}
                       >
                         General
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('tags')}
+                        className={`px-4 py-2 text-sm font-medium transition-colors ${
+                          activeTab === 'tags'
+                            ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        Tags
                       </button>
                       <button
                         onClick={() => setActiveTab('fonts')}
@@ -443,6 +455,34 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             </div>
                           </div>
                         </div>
+                      )}
+
+                      {activeTab === 'tags' && (
+                        <>
+                          {/* Show Album Tags Toggle */}
+                          <div>
+                            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                              Show Album Tags
+                            </label>
+                            <div className="flex items-center justify-between p-3 rounded-md border border-zinc-200 dark:border-zinc-700">
+                              <span className="text-sm text-zinc-900 dark:text-zinc-100">
+                                Display album names on photos in the gallery view
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={showAlbumTags}
+                                  onChange={(e) => setShowAlbumTags(e.target.checked)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                              When enabled, photos in the gallery will show small tags with album names in the top right corner. Tags are stacked when photos are in multiple albums.
+                            </p>
+                          </div>
+                        </>
                       )}
 
                       {activeTab === 'fonts' && (

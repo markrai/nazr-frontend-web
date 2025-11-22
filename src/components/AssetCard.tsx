@@ -83,6 +83,25 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
     }
   }, [showAlbumMenu, asset.id]);
 
+  // Load albums for tags when in gallery view and setting is enabled
+  const showAlbumTags = useUIStore((s) => s.showAlbumTags);
+  useEffect(() => {
+    if (!isInAlbumsView && showAlbumTags) {
+      const loadAlbumsForTags = async () => {
+        try {
+          const assetAlbumsData = await getAlbumsForAsset(asset.id);
+          setAssetAlbums(assetAlbumsData);
+        } catch (error) {
+          console.error('Failed to load albums for tags:', error);
+        }
+      };
+      loadAlbumsForTags();
+    } else if (!showAlbumTags || isInAlbumsView) {
+      // Clear albums if setting is disabled or in albums view
+      setAssetAlbums([]);
+    }
+  }, [asset.id, showAlbumTags, isInAlbumsView]);
+
   // Close album menu when clicking outside
   useEffect(() => {
     if (!showAlbumMenu) return;
@@ -480,6 +499,29 @@ export default function AssetCard({ asset, index, sort, order, filteredAssetIds,
             }`}
           >
             {isSelected && <CheckIcon className="w-4 h-4 text-white" />}
+          </div>
+        )}
+
+        {/* Album tags - only show in gallery view when setting is enabled */}
+        {!isInAlbumsView && showAlbumTags && assetAlbums.length > 0 && (
+          <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 max-w-[40%]">
+            {assetAlbums.slice(0, 3).map((album) => (
+              <div
+                key={album.id}
+                className="px-2 py-0.5 rounded text-[10px] font-medium bg-black/70 dark:bg-white/90 text-white dark:text-black backdrop-blur-sm truncate"
+                title={album.name}
+              >
+                {album.name}
+              </div>
+            ))}
+            {assetAlbums.length > 3 && (
+              <div
+                className="px-2 py-0.5 rounded text-[10px] font-medium bg-black/70 dark:bg-white/90 text-white dark:text-black backdrop-blur-sm"
+                title={assetAlbums.slice(3).map(a => a.name).join(', ')}
+              >
+                +{assetAlbums.length - 3} more
+              </div>
+            )}
           </div>
         )}
 

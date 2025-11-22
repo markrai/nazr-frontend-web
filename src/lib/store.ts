@@ -27,6 +27,8 @@ interface UIState {
   setSmartMergeLevel: (level: number) => void;
   isFetching: boolean;
   setIsFetching: (value: boolean) => void;
+  showAlbumTags: boolean;
+  setShowAlbumTags: (show: boolean) => void;
 }
 
 const THEME_KEY = 'nazr.theme';
@@ -39,6 +41,7 @@ const PRIORITIZE_FOLDER_STRUCTURE_KEY = 'nazr.prioritizeFolderStructure';
 const PRIORITIZE_FILENAME_DATE_KEY = 'nazr.prioritizeFilenameDate';
 const DELETE_ORIGINALS_KEY = 'nazr.deleteOriginalFiles';
 const SMART_MERGE_MODE_KEY = 'nazr.smartMergeMode';
+const SHOW_ALBUM_TAGS_KEY = 'nazr.showAlbumTags';
 
 // Module-level variable to track system theme listener
 let systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;
@@ -175,6 +178,11 @@ export const useUIStore = create<UIState>((set, get) => {
     isFetching: false,
     setIsFetching: (value) => {
       set({ isFetching: value });
+    },
+    showAlbumTags: localStorage.getItem(SHOW_ALBUM_TAGS_KEY) === 'true',
+    setShowAlbumTags: (show) => {
+      localStorage.setItem(SHOW_ALBUM_TAGS_KEY, String(show));
+      set({ showAlbumTags: show });
     },
   };
 });
