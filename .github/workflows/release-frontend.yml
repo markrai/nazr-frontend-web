@@ -1,8 +1,9 @@
 name: Build and Release Frontend
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -11,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  contents: read
 
 jobs:
   build-windows:
@@ -79,18 +81,31 @@ jobs:
       - name: Determine tag name
         id: tag
         run: |
-          if [ "${{ github.event_name }}" == "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
-          else
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Upload to Release
+      - name: Get release notes
+        id: notes
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          NOTES=$(git tag -l --format='%(contents)' "$TAG" 2>/dev/null || echo "Release $TAG")
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create or Update Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
+          body: ${{ steps.notes.outputs.notes }}
           files: |
             artifacts/**/*
           draft: false
           prerelease: false
+          generate_release_notes: false
+          fail_on_unmatched_files: false
 
