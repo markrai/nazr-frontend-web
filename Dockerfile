@@ -30,10 +30,17 @@ RUN npm run build
  # ---- Runtime stage ---------------------------------------------------------
 FROM nginx:1.27-alpine AS runtime
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Create templates directory and copy nginx config template (will be processed by entrypoint)
+RUN mkdir -p /etc/nginx/templates
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost/ || exit 1
 

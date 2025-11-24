@@ -31,8 +31,8 @@ echo (Ctrl+C to stop)
 docker run --rm -it ^
     --name %CONTAINER_NAME% ^
     -p %PORT%:80 ^
-    --add-host nazr:host-gateway ^
     -e VITE_API_BASE_URL=%API_URL% ^
+    -e BACKEND_HOST=host.docker.internal ^
     %IMAGE_NAME%
 
 :end

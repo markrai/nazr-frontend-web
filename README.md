@@ -63,6 +63,29 @@ Example usage:
 docker-compose -f docker-compose.windows.yml up -d
 ```
 
+## Windows EXE Build (Tauri)
+
+Build a standalone Windows executable using Tauri:
+
+```bash
+# Build Windows EXE
+npm run tauri:build
+
+# Or use the batch script
+build-tauri-windows.bat
+```
+
+**Output:**
+- Executable: `src-tauri\target\release\nazr-frontend.exe`
+- Installer: `src-tauri\target\release\bundle\nsis\nazr-frontend_0.8.0_x64-setup.exe`
+
+**Development mode:**
+```bash
+npm run tauri:dev
+```
+
+**Note:** Tauri uses the system WebView (Edge/Chromium). The Docker build process is unaffected and can be used alongside Tauri.
+
 ## Configuration
 
 - API base URL: set `VITE_API_BASE_URL` in `.env` (defaults to `http://localhost:9161`).
@@ -78,6 +101,8 @@ VITE_API_BASE_URL=http://localhost:9161
 - `npm run dev` — start dev server
 - `npm run build` — production build
 - `npm run preview` — preview production build
+- `npm run tauri:dev` — Tauri development mode
+- `npm run tauri:build` — build Windows EXE
 
 ## Features
 

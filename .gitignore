@@ -35,3 +35,7 @@ coverage/
 # OS
 Thumbs.db
 Desktop.ini
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/

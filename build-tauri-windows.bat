@@ -1,0 +1,33 @@
+@echo off
+REM Build Nazr Frontend as Windows EXE using Tauri
+REM This creates a standalone Windows executable
+
+echo Building Nazr Frontend for Windows...
+echo.
+
+REM Build the frontend first
+echo Step 1: Building frontend bundle...
+call npm run build
+if errorlevel 1 (
+    echo Frontend build failed!
+    exit /b 1
+)
+
+echo.
+echo Step 2: Building Tauri Windows executable...
+call npm run tauri:build
+if errorlevel 1 (
+    echo Tauri build failed!
+    exit /b 1
+)
+
+echo.
+echo Build complete!
+echo.
+echo The Windows executable is located at:
+echo src-tauri\target\release\nazr-frontend.exe
+echo.
+echo You can also find an installer at:
+echo src-tauri\target\release\bundle\nsis\nazr-frontend_0.8.0_x64-setup.exe
+echo.
+
