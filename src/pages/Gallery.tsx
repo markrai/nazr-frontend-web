@@ -1,7 +1,7 @@
 import type { Asset } from '../types';
 import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { useAssetsInfinite } from '../lib/hooks';
+import { useAssetsInfinite, useStats } from '../lib/hooks';
 import GalleryGrid from '../components/GalleryGrid';
 import { useGalleryScrollRestoration } from '../lib/scroll';
 import Timeline from '../components/Timeline';
@@ -335,6 +335,43 @@ export default function Gallery() {
       setIsFetching(false);
     };
   }, [isFetching, setIsFetching]);
+  
+  // Monitor asset count changes from stats to auto-refresh gallery
+  const { data: stats } = useStats();
+  const prevAssetCountRef = useRef<number | null>(null);
+  const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    if (!stats?.db?.assets) return;
+    
+    const currentCount = stats.db.assets;
+    const prevCount = prevAssetCountRef.current;
+    
+    // If count changed, schedule a refetch (debounced)
+    if (prevCount !== null && currentCount !== prevCount) {
+      // Clear any pending refetch
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
+      
+      // Debounce refetch to avoid rapid updates
+      refetchTimeoutRef.current = setTimeout(() => {
+        refetch();
+        refetchTimeoutRef.current = null;
+      }, 1000); // Wait 1 second after change detected
+    }
+    
+    // Update the ref
+    prevAssetCountRef.current = currentCount;
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
+    };
+  }, [stats?.db?.assets, refetch]);
+  
   const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const yearRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());

@@ -9,4 +9,7 @@ Dockerfile.local
 .env.local
 .env.*.local
 
+# Tauri build artifacts (not needed for Docker build)
+src-tauri/target/
+src-tauri/gen/
 

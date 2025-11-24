@@ -5,6 +5,17 @@ REM This creates a standalone Windows executable
 echo Building Nazr Frontend for Windows...
 echo.
 
+REM Check if the executable is running and terminate it if needed
+echo Checking for running instances...
+tasklist /FI "IMAGENAME eq nazr-frontend.exe" 2>NUL | find /I /N "nazr-frontend.exe">NUL
+if "%ERRORLEVEL%"=="0" (
+    echo Found running instance of nazr-frontend.exe, terminating...
+    taskkill /F /IM nazr-frontend.exe >NUL 2>&1
+    timeout /t 1 /nobreak >NUL
+    echo Process terminated.
+    echo.
+)
+
 REM Build the frontend first
 echo Step 1: Building frontend bundle...
 call npm run build
