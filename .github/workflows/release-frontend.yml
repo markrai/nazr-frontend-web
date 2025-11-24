@@ -9,6 +9,9 @@ on:
         description: 'Version tag (e.g., v0.8.0)'
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     name: Build Windows EXE
@@ -81,6 +84,4 @@ jobs:
             artifacts/**/*
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
