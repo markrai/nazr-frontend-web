@@ -16,6 +16,17 @@ export default function PathsManager() {
   const [pathStatuses, setPathStatuses] = useState<Record<string, { scanning: boolean; watcher_paused: boolean; watching: boolean }>>({});
   const isPageVisible = usePageVisibility();
 
+  // Allow enabling the Docker/WSL file browser explicitly.
+  const isDockerFileBrowserEnabled =
+    typeof import.meta !== 'undefined' &&
+    (import.meta as any)?.env?.VITE_ENABLE_FILE_BROWSER === '1';
+
+  // Opt-in flag: only enable Docker/WSL FileBrowser (which calls backend /browse)
+  // if VITE_ENABLE_FILE_BROWSER=1 is set when building.
+  const isFileBrowserEnabled =
+    typeof import.meta !== 'undefined' &&
+    (import.meta as any).env?.VITE_ENABLE_FILE_BROWSER === '1';
+
   const { data: pathsData = [], isLoading } = useQuery({
     queryKey: ['scanPaths'],
     queryFn: () => api.getScanPaths(),
@@ -161,8 +172,31 @@ export default function PathsManager() {
     }
   };
 
-  const handleBrowseClick = () => {
-    setBrowserOpen(true);
+  const handleBrowseClick = async () => {
+    try {
+      const { open } = await import(/* @vite-ignore */ '@tauri-apps/api/dialog');
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Folder to Scan',
+      });
+
+      if (selected && typeof selected === 'string') {
+        setNewPath(selected);
+        return;
+      }
+      return;
+    } catch (error) {
+      console.error('Tauri dialog not available:', error);
+      if (isDockerFileBrowserEnabled) {
+        setBrowserOpen(true);
+      } else {
+        alert(
+          'Folder picker is not available in this build.\n\n' +
+          'Please type an absolute path manually (e.g., C:\\\\Users\\\\YourName\\\\Pictures on Windows or /photos in Docker).'
+        );
+      }
+    }
   };
 
   const handlePathSelected = (path: string) => {
@@ -319,7 +353,7 @@ export default function PathsManager() {
         variant="danger"
       />
 
-      {browserOpen && (
+      {browserOpen && isDockerFileBrowserEnabled && (
         <FileBrowser
           currentPath={defaultRootPath}
           onPathSelect={handlePathSelected}

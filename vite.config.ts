@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -23,5 +24,12 @@ export default defineConfig({
     minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
+  },
+  resolve: {
+    alias: process.env.VITE_BUILD_TAURI
+      ? {}
+      : {
+          '@tauri-apps/api/dialog': path.resolve(__dirname, 'src/lib/tauriDialogStub.ts'),
+        },
   },
 })

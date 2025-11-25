@@ -79,6 +79,16 @@ build-tauri-windows.bat
 - Executable: `src-tauri\target\release\nazr-frontend.exe`
 - Installer: `src-tauri\target\release\bundle\nsis\nazr-frontend_0.8.0_x64-setup.exe`
 
+### Docker/WSL Folder Browser Flag
+
+The React “Browse” UI (which calls the backend `/browse` endpoint) is only meaningful when the backend runs in Docker/WSL with host paths mounted under `/host`. To enable that UI in web builds, set:
+
+```bash
+VITE_ENABLE_FILE_BROWSER=1 npm run build
+```
+
+Without this flag, the UI will fall back to the native Tauri dialog (desktop) or require manual absolute paths (web), which is the correct behavior when the backend runs natively on Windows.
+
 **Development mode:**
 ```bash
 npm run tauri:dev

@@ -18,9 +18,11 @@ ENV NODE_ENV=development
 COPY package*.json ./
 RUN npm ci
 
-# Allow overriding the backend URL at build time (set before copying source)
+# Allow overriding the backend URL and enabling the Docker file browser at build time
 ARG VITE_API_BASE_URL=http://localhost:9161
+ARG VITE_ENABLE_FILE_BROWSER=0
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_ENABLE_FILE_BROWSER=${VITE_ENABLE_FILE_BROWSER}
 
 # Copy the rest of the source and build the production bundle
 COPY . .

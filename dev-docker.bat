@@ -6,6 +6,12 @@ set "IMAGE_NAME=nazr-frontend-dev"
 set "CONTAINER_NAME=nazr-frontend-dev"
 set "PORT=3000"
 
+if "%VITE_ENABLE_FILE_BROWSER%"=="" (
+    set "ENABLE_FILE_BROWSER=1"
+) else (
+    set "ENABLE_FILE_BROWSER=%VITE_ENABLE_FILE_BROWSER%"
+)
+
 if "%VITE_API_BASE_URL%"=="" (
     set "API_URL=http://localhost:9161"
 ) else (
@@ -14,9 +20,10 @@ if "%VITE_API_BASE_URL%"=="" (
 
 echo Building Nazr frontend Docker image: %IMAGE_NAME%
 echo Using backend API: %API_URL%
+echo File browser enabled flag: %ENABLE_FILE_BROWSER%
 echo.
 
-docker build --build-arg VITE_API_BASE_URL=%API_URL% -t %IMAGE_NAME% .
+docker build --build-arg VITE_API_BASE_URL=%API_URL% --build-arg VITE_ENABLE_FILE_BROWSER=%ENABLE_FILE_BROWSER% -t %IMAGE_NAME% .
 if errorlevel 1 (
     echo Docker build failed.
     goto :end
@@ -32,6 +39,7 @@ docker run --rm -it ^
     --name %CONTAINER_NAME% ^
     -p %PORT%:80 ^
     -e VITE_API_BASE_URL=%API_URL% ^
+    -e VITE_ENABLE_FILE_BROWSER=%ENABLE_FILE_BROWSER% ^
     -e BACKEND_HOST=host.docker.internal ^
     %IMAGE_NAME%
 
