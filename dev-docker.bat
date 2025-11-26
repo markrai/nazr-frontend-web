@@ -23,7 +23,7 @@ echo Using backend API: %API_URL%
 echo File browser enabled flag: %ENABLE_FILE_BROWSER%
 echo.
 
-docker build --build-arg VITE_API_BASE_URL=%API_URL% --build-arg VITE_ENABLE_FILE_BROWSER=%ENABLE_FILE_BROWSER% -t %IMAGE_NAME% .
+docker build --no-cache --build-arg VITE_API_BASE_URL=%API_URL% --build-arg VITE_ENABLE_FILE_BROWSER=%ENABLE_FILE_BROWSER% -t %IMAGE_NAME% .
 if errorlevel 1 (
     echo Docker build failed.
     goto :end

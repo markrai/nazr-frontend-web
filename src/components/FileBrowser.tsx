@@ -10,12 +10,19 @@ interface FileBrowserProps {
 }
 
 export default function FileBrowser({ currentPath, onPathSelect, onClose }: FileBrowserProps) {
-  const [selectedPath, setSelectedPath] = useState<string>(currentPath);
-  const [pathHistory, setPathHistory] = useState<string[]>([currentPath]);
+  const normalizePath = (path?: string) => {
+    if (!path || path.trim() === '') return '/';
+    return path.startsWith('/') ? path : `/${path}`;
+  };
+
+  const initialPath = normalizePath(currentPath);
+
+  const [selectedPath, setSelectedPath] = useState<string>(initialPath);
+  const [pathHistory, setPathHistory] = useState<string[]>([initialPath]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['browse', selectedPath],
-    queryFn: () => api.browseDirectory(selectedPath),
+    queryFn: () => api.browseDirectory(normalizePath(selectedPath)),
     enabled: true,
   });
 

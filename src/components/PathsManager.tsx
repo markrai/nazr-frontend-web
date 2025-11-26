@@ -16,16 +16,13 @@ export default function PathsManager() {
   const [pathStatuses, setPathStatuses] = useState<Record<string, { scanning: boolean; watcher_paused: boolean; watching: boolean }>>({});
   const isPageVisible = usePageVisibility();
 
-  // Allow enabling the Docker/WSL file browser explicitly.
-  const isDockerFileBrowserEnabled =
-    typeof import.meta !== 'undefined' &&
-    (import.meta as any)?.env?.VITE_ENABLE_FILE_BROWSER === '1';
-
-  // Opt-in flag: only enable Docker/WSL FileBrowser (which calls backend /browse)
-  // if VITE_ENABLE_FILE_BROWSER=1 is set when building.
-  const isFileBrowserEnabled =
-    typeof import.meta !== 'undefined' &&
-    (import.meta as any).env?.VITE_ENABLE_FILE_BROWSER === '1';
+  // Allow enabling the backend-powered file browser (/browse) explicitly.
+  // This is primarily for Docker/WSL, but can be used in any build where the
+  // backend exposes /browse and paths are meaningful on that host.
+  const fileBrowserEnv = typeof import.meta !== 'undefined' 
+    ? (import.meta as any)?.env?.VITE_ENABLE_FILE_BROWSER 
+    : undefined;
+  const isFileBrowserEnabled = fileBrowserEnv === '1' || String(fileBrowserEnv || '').toLowerCase() === 'true';
 
   const { data: pathsData = [], isLoading } = useQuery({
     queryKey: ['scanPaths'],
@@ -67,7 +64,9 @@ export default function PathsManager() {
     }
   }, [paths, isPageVisible]);
 
-  // Start browser from /host to show mounted directories
+  // Start browser from /host to show mounted directories in Docker/WSL setups.
+  // For non-Docker backends this can still be used if /host (or another root)
+  // is meaningful on that system.
   const defaultRootPath = '/host';
 
   const addPathMutation = useMutation({
@@ -173,6 +172,14 @@ export default function PathsManager() {
   };
 
   const handleBrowseClick = async () => {
+    // If the backend-powered file browser is enabled, prefer it. This works for
+    // Docker/WSL and any environment where /browse is available.
+    if (isFileBrowserEnabled) {
+      setBrowserOpen(true);
+      return;
+    }
+
+    // Otherwise, try the Tauri native folder picker (desktop builds).
     try {
       const { open } = await import(/* @vite-ignore */ '@tauri-apps/api/dialog');
       const selected = await open({
@@ -188,14 +195,12 @@ export default function PathsManager() {
       return;
     } catch (error) {
       console.error('Tauri dialog not available:', error);
-      if (isDockerFileBrowserEnabled) {
-        setBrowserOpen(true);
-      } else {
-        alert(
-          'Folder picker is not available in this build.\n\n' +
-          'Please type an absolute path manually (e.g., C:\\\\Users\\\\YourName\\\\Pictures on Windows or /photos in Docker).'
-        );
-      }
+
+      // As a last resort, fall back to manual entry.
+      alert(
+        'Folder picker is not available in this build.\n\n' +
+        'Please type an absolute path manually (e.g., C:\\\\Users\\\\YourName\\\\Pictures on Windows or /photos in Docker).'
+      );
     }
   };
 
@@ -353,7 +358,7 @@ export default function PathsManager() {
         variant="danger"
       />
 
-      {browserOpen && isDockerFileBrowserEnabled && (
+      {browserOpen && isFileBrowserEnabled && (
         <FileBrowser
           currentPath={defaultRootPath}
           onPathSelect={handlePathSelected}

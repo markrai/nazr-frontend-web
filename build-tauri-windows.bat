@@ -16,8 +16,12 @@ if "%ERRORLEVEL%"=="0" (
     echo.
 )
 
+REM Enable backend-powered file browser for Docker/WSL compatibility
+set "VITE_ENABLE_FILE_BROWSER=1"
+
 REM Build the frontend first
 echo Step 1: Building frontend bundle...
+echo File browser enabled: %VITE_ENABLE_FILE_BROWSER%
 call npm run build
 if errorlevel 1 (
     echo Frontend build failed!
