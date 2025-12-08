@@ -1515,7 +1515,10 @@ function FileDiscoveryCard({ stats, isScanRunning, lastScan }: { stats: any; isS
 }
 
 function ProcessingProgressCard({ stats, lastProcessing, processingElapsedLive, isProcessingActive }: { stats: any; lastProcessing: { files: number; elapsed: number } | null; processingElapsedLive: number | null; isProcessingActive: boolean }) {
-  const isProcessing = isProcessingActive;
+  // Use backend state directly for display, not the fallback
+  // This ensures we show completed values immediately when backend says processing is done
+  const backendProcessingActive = (stats?.scan_running === true) || (stats?.processing_active === true);
+  const isProcessing = backendProcessingActive;
   
   return (
     <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-2.5 sm:p-4 bg-white dark:bg-zinc-900">
@@ -1822,7 +1825,9 @@ function PerformanceSection({
                   const completedElapsed = stats.processing?.last_completed_elapsed_seconds;
                   
                   let timeSeconds: number | null = null;
-                  if (processingPillActive) {
+                  // Use backendProcessingActive for display logic (not the fallback)
+                  // This ensures we show completed values immediately when backend says processing is done
+                  if (backendProcessingActive) {
                     if (typeof processingElapsedLive === 'number') {
                       timeSeconds = processingElapsedLive;
                     } else if (stats.current_processing?.elapsed_seconds !== undefined) {
@@ -1835,13 +1840,13 @@ function PerformanceSection({
                       timeSeconds = lastProcessing.elapsed;
                     }
                   }
-                  
+
                   const time = typeof timeSeconds === 'number'
                     ? formatDurationNoDecimals(timeSeconds)
                     : null;
-                  
+
                   // Get throughput rate - show average rate when idle (completed processing)
-                  const throughput = !processingPillActive
+                  const throughput = !backendProcessingActive
                     ? (stats.processing?.throughput_mb_per_sec ?? stats.processed.mb_per_sec ?? 0)
                     : 0;
                   
@@ -1855,7 +1860,7 @@ function PerformanceSection({
                           {time}
                         </>
                       )}
-                      {!processingPillActive && throughput > 0 && (
+                      {!backendProcessingActive && throughput > 0 && (
                         <>
                           {' @ '}
                           {throughput.toFixed(2)}
@@ -1879,7 +1884,7 @@ function PerformanceSection({
                   
                   // Get processing rate
                   let processingRate = 0;
-                  if (processingPillActive && stats.current_processing?.processing_rate_files_per_sec !== undefined) {
+                  if (backendProcessingActive && stats.current_processing?.processing_rate_files_per_sec !== undefined) {
                     processingRate = stats.current_processing.processing_rate_files_per_sec;
                   } else if (stats.processing?.rate_files_per_sec !== undefined) {
                     processingRate = stats.processing.rate_files_per_sec;
