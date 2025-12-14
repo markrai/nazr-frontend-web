@@ -1,3 +1,7 @@
+Please note: As of December 12th 2025, there is no longer a companion backend to this app. This project has migrated to a unified app called [Seen](https://github.com/markrai/seen) 
+
+
+
 
 <img width="5000" height="2000" alt="Nazr" src="https://github.com/user-attachments/assets/d137d955-cc80-4e5b-9701-6881fe479520" />
 
